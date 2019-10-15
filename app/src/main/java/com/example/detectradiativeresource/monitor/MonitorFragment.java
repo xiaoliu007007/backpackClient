@@ -34,9 +34,12 @@ import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.DistanceUtil;
+import com.example.detectradiativeresource.Test.MsgTest;
 import com.example.detectradiativeresource.bluetooth.library.BluetoothSPP;
-import com.example.detectradiativeresource.data.DataMsg;
+import com.example.detectradiativeresource.dao.DataMsg;
+import com.example.detectradiativeresource.log.LogMsgHelper;
 import com.example.detectradiativeresource.monitor.trace.LocationService;
+import com.example.detectradiativeresource.utils.DBScanUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,6 +55,7 @@ public class MonitorFragment extends Fragment{
     private TimerTask task = null;
     private TextView valView;
     private Button start;
+    private Button cal;
 
     public double longitude=0.0;
     public double latitude=0.0;
@@ -66,8 +70,9 @@ public class MonitorFragment extends Fragment{
     private int startValue=0;//初始点辐射值
     private double maxValueIncr=0.0;//最大辐射比率
     private int right_dir=-1;//正确方向
-    private boolean setRegion=false;//是否需要设置区域
+    //private boolean setRegion=false;//是否需要设置区域
     private boolean setGuide=false;//是否找到辐射值最强的方向
+    private MsgTest test=new MsgTest();
     private String measureVal="";
     LocationService locationService;
     LatLng lastPnt = null;
@@ -116,8 +121,6 @@ public class MonitorFragment extends Fragment{
                 return false;
             }
         });
-        //setTestMsg();
-        //initHistoryPoint();
     }
 
     @Override
@@ -214,25 +217,25 @@ public class MonitorFragment extends Fragment{
 
                     }
                     //mCallback.setLocation(latitude,longitude);
-                /*setMarker();
-                if(!setRegion){
-                    if(flag==0){
-                        Log.i(TAG, "寻找起点");
-                        findStart();
+                    setMarker();
+                    if(!MainActivity.setRegion){
+                        if(flag==0){
+                            Log.i(TAG, "寻找起点");
+                            findStart();
+                        }
+                        if(flag==1||flag==2){
+                            Log.i(TAG, "开始导航");
+                            findDirection();
+                        }
+                        if(flag==3){
+                            Log.i(TAG, "沿着方向");
+                            alongWithDirection();
+                        }
                     }
-                    if(flag==1||flag==2){
-                        Log.i(TAG, "开始导航");
-                        findDirection();
+                    if(MainActivity.setRegion){
+                        double[] now={MainActivity.rightLatitude,MainActivity.rightLongitude};
+                        createRegion(now,MainActivity.rightDir);
                     }
-                    if(flag==3){
-                        Log.i(TAG, "沿着方向");
-                        alongWithDirection();
-                    }
-                }
-                if(setRegion){
-                    double[] now={MainActivity.Latitude,MainActivity.Longitude};
-                    createRegion(now,right_dir);
-                }*/
                 }
 
             }
@@ -248,6 +251,7 @@ public class MonitorFragment extends Fragment{
     private void initDetect(View view){
         ColorStatus = 0;
         valView=view.findViewById(R.id.get_values);
+        cal=view.findViewById(R.id.calculate);
         start = (Button) view.findViewById(R.id.start);
         start.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -272,6 +276,20 @@ public class MonitorFragment extends Fragment{
                 UpdateUI(res);
             }
         });
+        /**
+         * @description: DBSCAN测试按钮
+         * @author: lyj
+         * @create: 2019/09/23
+         **/
+        cal.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                double[] ans= DBScanUtils.getTestMsg();
+                Toast.makeText(getActivity().getApplicationContext(), "预测坐标为"+ans[0]+":"+ans[1], Toast.LENGTH_LONG).show();
+            }
+        });
+
+        setTestMsg();
+        initHistoryPoint();
     }
 
     /**
@@ -344,13 +362,15 @@ public class MonitorFragment extends Fragment{
             ColorStatus = 4;
             valView.setBackgroundColor(Color.YELLOW);
         }
-        else if(val>MainActivity.SeriousVal){
+        else if(val>MainActivity.seriousVal){
             ColorStatus = 3;
             valView.setBackgroundColor(Color.MAGENTA);
+            LogMsgHelper.logSave("最近报警时间",getTime());
         }
-        else if(val>MainActivity.AlarmVal){
+        else if(val>MainActivity.alarmVal){
             ColorStatus = 2;
             valView.setBackgroundColor(Color.RED);
+            LogMsgHelper.logSave("最近警报时间",getTime());
         }
         else{
             ColorStatus = 1;
@@ -382,6 +402,248 @@ public class MonitorFragment extends Fragment{
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         String date = dateFormat.format(new java.util.Date());
         return date;
+    }
+
+    /**************************************历史轨迹点部分*************************************/
+
+    /**
+     * @description: 历史轨迹点的测试
+     * @author: lyj
+     * @create: 2019/09/27
+     **/
+    public void setMarker(){
+        if(measureVal==null||measureVal.length()==0){
+            Log.i(TAG, "measureVal---------null");
+            return;
+        }
+        if(isRepeatPoint()){
+            Log.i(TAG, "repeated---------null");
+            return;
+        }
+        Log.i(TAG, "find-----------------------------------------------------------------------go");
+        Bundle mBundle = new Bundle();
+        mBundle.putString("msg", measureVal);
+        LatLng point = new LatLng(latitude, longitude);
+        BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_end);
+        MarkerOptions option = new MarkerOptions().position(point).icon(bitmap).draggable(true).extraInfo(mBundle).flat(true).alpha(0.5f);
+        mBaiduMap.addOverlay(option);
+        DataMsg msg=new DataMsg(getTime(),measureVal,longitude,latitude,1);
+        msg.save();
+    }
+    /**
+     * @description: 绘制数据库轨迹点
+     * @author: lyj
+     * @create: 2019/09/29
+     **/
+    public void initHistoryPoint(){
+        List<DataMsg> list=DataMsg.find(DataMsg.class,"status = ?","1");
+        if(list==null||list.size()==0){
+            return;
+        }
+        for(DataMsg data:list){
+            Bundle mBundle = new Bundle();
+            mBundle.putString("msg", data.getValue());
+            LatLng point = new LatLng(data.getLatitude(), data.getLongitude());
+            BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_end);
+            MarkerOptions option = new MarkerOptions().position(point).icon(bitmap).draggable(true).extraInfo(mBundle).flat(true).alpha(0.5f);
+            mBaiduMap.addOverlay(option);
+        }
+    }
+
+    /**
+     * @description: 存储测试数据，后期删除
+     * @author: lyj
+     * @create: 2019/09/29
+     **/
+    public void setTestMsg(){
+        DataMsg msg=new DataMsg(getTime(),String.valueOf(1111),116.364534,39.970186,1);
+        msg.save();
+    }
+
+    /**
+     * @description: 周围范围查询函数，查询是否有点已经录入了
+     * @author: lyj
+     * @create: 2019/09/29
+     **/
+    public boolean isRepeatPoint(){
+        int Latitude_point=String.valueOf(latitude).indexOf(".");
+        int longitude_point=String.valueOf(longitude).indexOf(".");
+        Log.i(TAG, String.valueOf(latitude-MainActivity.interval).substring(0,Latitude_point+7)+":"+String.valueOf(latitude+MainActivity.interval).substring(0,Latitude_point+7)+":"+String.valueOf(longitude-MainActivity.interval).substring(0,longitude_point+7)+":"+String.valueOf(longitude+MainActivity.interval).substring(0,longitude_point+7));
+        List<DataMsg> list=DataMsg.find(DataMsg.class,"status = ? and latitude > ? and latitude < ? and longitude > ? and longitude < ?",
+                "1",String.valueOf(latitude-MainActivity.interval).substring(0,Latitude_point+7),String.valueOf(latitude+MainActivity.interval).substring(0,Latitude_point+7),String.valueOf(longitude-MainActivity.interval).substring(0,longitude_point+7),String.valueOf(longitude+MainActivity.interval).substring(0,longitude_point+7));
+        Log.i(TAG,"---------"+String.valueOf(list==null)+String.valueOf(list.size()));
+        return list.size()!=0;
+    }
+
+
+
+    /**************************************导航算法部分*************************************/
+
+    /**
+     * @description: 绘制初始点
+     * @author: lyj
+     * @create: 2019/09/10
+     **/
+    public void pointStart() {
+        mBaiduMap.clear();
+        //创建测试的起点坐标
+        LatLng point = new LatLng(MainActivity.startLatitude,MainActivity.startLongitude);
+        //构建Marker图标
+        BitmapDescriptor bitmap = BitmapDescriptorFactory
+                .fromResource(R.drawable.icon_start);
+        //构建MarkerOption，用于在地图上添加Marker
+        OverlayOptions option = new MarkerOptions()
+                .position(point)
+                .icon(bitmap);
+        //在地图上添加Marker，并显示
+        mBaiduMap.addOverlay(option);
+    }
+
+    /**
+     * @description: 开启引路算法
+     * @author: lyj
+     * @create: 2019/09/10
+     **/
+    public void findStart() {
+        if(MainActivity.testFlag){
+            startValue=test.findData();
+            test.find();
+            if(startValue!=0){
+                Toast.makeText(getActivity().getApplicationContext(), String.valueOf(startValue), Toast.LENGTH_LONG).show();
+                MainActivity.startLongitude=longitude;
+                MainActivity.startLatitude=latitude;
+                flag=1;
+                pointStart();
+            }
+        }
+    }
+
+    /**
+     * @description: 引路算法
+     * @author: lyj
+     * @create: 2019/09/06
+     **/
+    private void findDirection(){
+        LatLng start=new LatLng(MainActivity.startLatitude,MainActivity.startLongitude);
+        if(flag==1){
+            if(now_dir==-1){
+                now_dir++;//初始化方向操作
+            }
+            LatLng aim=new LatLng(MainActivity.startLatitude+MainActivity.directions[now_dir][1],MainActivity.startLongitude+MainActivity.directions[now_dir][0]);
+            if(!isColored){//若没有绘制路线，则绘制路线
+                List<LatLng> list = new ArrayList<>();
+                list.add(start);
+                list.add(aim);
+                PolylineOptions polyline = new PolylineOptions().width(10).color(Color.BLACK).points(list);
+                Overlay track = mBaiduMap.addOverlay(polyline);
+                isColored=!isColored;
+                return;
+            }
+            Toast.makeText(getActivity().getApplicationContext(), "请沿着黑色指引路线到达指定地点", Toast.LENGTH_LONG).show();
+            /*double distance1=DistanceUtil.getDistance(new LatLng(MainActivity.Latitude,MainActivity.Longitude),aim);
+            Toast.makeText(getActivity().getApplicationContext(), "距离:"+distance1, Toast.LENGTH_LONG).show();*/
+            if(DistanceUtil.getDistance(new LatLng(MainActivity.latitude,MainActivity.longitude),aim)<3.5){
+                calculateDir();//计算辐射比率
+                flag=2;//切换模式
+            }
+        }
+        else if(flag==2){
+            Toast.makeText(getActivity().getApplicationContext(), "已经到达，请沿着黑色指引路线原路返回", Toast.LENGTH_LONG).show();
+            if(DistanceUtil.getDistance(new LatLng(MainActivity.latitude,MainActivity.longitude),start)<3.5){
+                mBaiduMap.clear();
+                pointStart();
+                if(now_dir==6){
+                    Toast.makeText(getActivity().getApplicationContext(), "完成", Toast.LENGTH_LONG).show();
+                    flag=3;
+                    now_dir=-1;
+                    isColored=!isColored;
+                    return;
+                }
+                now_dir+=2;
+                isColored=!isColored;
+                flag=1;
+                return;
+            }
+            Toast.makeText(getActivity().getApplicationContext(), "已经到达，请沿着黑色指引路线原路返回", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /**
+     * @description: 目前最大辐射比率方向计算
+     * @author: lyj
+     * @create: 2019/09/10
+     **/
+    public void calculateDir() {
+        Log.i(TAG, "calculate Dirnb ，flag==1");
+        int nextValue=test.findData();
+        Toast.makeText(getActivity().getApplicationContext(), "当前辐射值"+nextValue, Toast.LENGTH_LONG).show();
+        double distance=DistanceUtil.getDistance(new LatLng(MainActivity.latitude,MainActivity.longitude),new LatLng(MainActivity.startLatitude,MainActivity.startLongitude));
+        double incr=(nextValue-startValue)/distance;
+        if(incr>maxValueIncr){
+            right_dir=now_dir;
+        }
+    }
+
+    /**
+     * @description: 引导沿着辐射比率最大方向
+     * @author: lyj
+     * @create: 2019/09/10
+     **/
+    public void alongWithDirection() {
+        if(!setGuide){
+            LatLng now=new LatLng(MainActivity.latitude,MainActivity.longitude);
+            LatLng next=new LatLng(MainActivity.latitude+MainActivity.directions[right_dir][1]*5,MainActivity.longitude+MainActivity.directions[right_dir][0]*5);
+            List<LatLng> list = new ArrayList<>();
+            list.add(now);
+            list.add(next);
+            PolylineOptions polyline = new PolylineOptions().width(10).color(Color.BLACK).points(list);
+            Overlay track = mBaiduMap.addOverlay(polyline);
+            setGuide=!setGuide;
+        }
+        int nowValue=test.findData();//判断此时的辐射值是否减小或者到达最大值
+        Toast.makeText(getActivity().getApplicationContext(), "当前辐射值"+nowValue, Toast.LENGTH_LONG).show();
+        if(nowValue>=MainActivity.maxValue){
+            MainActivity.rightDir=right_dir;
+            MainActivity.rightLatitude=latitude;
+            MainActivity.rightLongitude=longitude;
+            MainActivity.setRegion=!MainActivity.setRegion;
+            return;
+        }
+        if(nowValue<startValue){
+            setGuide=!setGuide;
+            flag=1;
+            findStart();
+            return;
+        }
+        startValue=nowValue;
+    }
+
+    /**
+     * @description: 绘制区域
+     * @author: lyj
+     * @create: 2019/09/18
+     **/
+    public void createRegion(double[] now,int dir) {
+        mBaiduMap.clear();
+        //setRegion=!setRegion;
+        for(int i=0;i<10;i++){
+            LatLng mid=new LatLng(now[0]-MainActivity.directions[dir][1]*i,now[1]-MainActivity.directions[dir][0]*i);
+            int next_dir;
+            if(dir>5){
+                next_dir=dir-2;
+            }
+            else{
+                next_dir=dir+2;
+            }
+            LatLng start=new LatLng(mid.latitude+MainActivity.directions[next_dir][1]*6,mid.longitude+MainActivity.directions[next_dir][0]*6);
+            LatLng next=new LatLng(mid.latitude-MainActivity.directions[next_dir][1]*6,mid.longitude-MainActivity.directions[next_dir][0]*6);
+            List<LatLng> list = new ArrayList<>();
+            list.add(start);
+            list.add(next);
+            PolylineOptions polyline = new PolylineOptions().width(10).color(Color.BLACK).points(list);
+            Overlay track = mBaiduMap.addOverlay(polyline);
+        }
+        Toast.makeText(getActivity().getApplicationContext(), "请沿着黑色路线依次采集数据", Toast.LENGTH_LONG).show();
     }
 }
 

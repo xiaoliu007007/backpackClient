@@ -13,6 +13,7 @@ import android.widget.ListView;
 
 import com.example.detectradiativeresource.MainActivity;
 import com.example.detectradiativeresource.R;
+import com.example.detectradiativeresource.dao.DataMsg;
 import com.example.detectradiativeresource.route.BNaviMainActivity;
 
 import org.json.JSONException;

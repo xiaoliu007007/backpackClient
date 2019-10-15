@@ -1,4 +1,4 @@
-package com.example.detectradiativeresource.data;
+package com.example.detectradiativeresource.log;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -6,21 +6,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+
 import com.example.detectradiativeresource.R;
-import com.example.detectradiativeresource.dao.DataMsg;
+import com.example.detectradiativeresource.dao.LogMsg;
 
 import java.util.List;
 
 /**
- * @description: 上传Adatper
+ * @description: LogAdatper
  * @author: lyj
- * @create: 2019/09/02
+ * @create: 2019/10/15
  **/
-public class DataMsgAdapter extends BaseAdapter {
+public class LogMsgAdapter extends BaseAdapter {
     private Context ctx;
     private LayoutInflater mLayoutInflater;
-    private List<DataMsg> list;
-    public DataMsgAdapter(Context context, List<DataMsg> list) {
+    private List<LogMsg> list;
+    public LogMsgAdapter(Context context, List<LogMsg> list) {
         mLayoutInflater = LayoutInflater.from(context);
         this.list = list;
     }
@@ -44,30 +45,24 @@ public class DataMsgAdapter extends BaseAdapter {
         if(convertView == null)
         {
             viewHolder = new ViewHolder();
-            convertView = mLayoutInflater.inflate(R.layout.datamsg_item, null);
+            convertView = mLayoutInflater.inflate(R.layout.logmsg_item, null);
             //实例化控件
-            viewHolder.time= (TextView) convertView.findViewById(R.id.item_time);
-            viewHolder.value = (TextView) convertView.findViewById(R.id.item_value);
-            viewHolder.longitude = (TextView) convertView.findViewById(R.id.item_longitude);
-            viewHolder.latitude = (TextView) convertView.findViewById(R.id.litem_latitude);
+            viewHolder.key= (TextView) convertView.findViewById(R.id.item_log_key);
+            viewHolder.value = (TextView) convertView.findViewById(R.id.item_log_value);
             convertView.setTag(viewHolder);
         }else{
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
         //抽取bean对象
-        DataMsg msg = list.get(position);
+        LogMsg msg = list.get(position);
         //设置控件数据
-        viewHolder.time.setText(msg.getTime());
+        viewHolder.key.setText(msg.getKey());
         viewHolder.value.setText(msg.getValue());
-        viewHolder.longitude.setText(String.valueOf(msg.getLongitude()));
-        viewHolder.latitude.setText(String.valueOf(msg.getLatitude()));
         return convertView;
     }
     class ViewHolder{
-        public TextView time;
+        public TextView key;
         public TextView value;
-        public TextView longitude;
-        public TextView latitude;
     }
 }

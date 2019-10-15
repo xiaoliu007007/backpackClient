@@ -4,10 +4,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
@@ -17,23 +14,29 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.baidu.mapapi.SDKInitializer;
+import com.example.detectradiativeresource.Test.MsgTest;
 import com.example.detectradiativeresource.bluetooth.BluetoothFragment;
 import com.example.detectradiativeresource.bluetooth.library.BluetoothSPP;
 import com.example.detectradiativeresource.bluetooth.library.BluetoothState;
 import com.example.detectradiativeresource.bluetooth.library.DeviceList;
 import com.example.detectradiativeresource.data.DataFragment;
+import com.example.detectradiativeresource.dao.TestMsg;
 import com.example.detectradiativeresource.log.LogFragment;
+import com.example.detectradiativeresource.log.LogMsgHelper;
 import com.example.detectradiativeresource.monitor.MonitorFragment;
 import com.example.detectradiativeresource.monitor.trace.LocationService;
 import com.example.detectradiativeresource.setting.SettingFragment;
 import com.orm.SugarContext;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Properties;
 
 public class MainActivity extends AppCompatActivity {
     /**
@@ -46,11 +49,21 @@ public class MainActivity extends AppCompatActivity {
     public static LocationService locationService;
     private FrameLayout mFlLifeRoot;
     public static BluetoothSPP bt;
-    public static double longitude=0.0;
-    public static double latitude=0.0;
-    public static int AlarmVal=1400;
-    public static int SeriousVal=1800;
-    public static int errorVal=2200;
+    public static double longitude;
+    public static double latitude;
+    public static int alarmVal;
+    public static int seriousVal;
+    public static int errorVal;
+    public static double interval;//范围内历史轨迹点的间隔数
+    public static double startLatitude;
+    public static double startLongitude;
+    public static boolean testFlag=true;//是否开启测试
+    public static double[][] directions={{0,0.0001},{0.00005,0.00005},{0.0001,0},{0.00005,-0.00005},{0,-0.0001},{-0.00005,-0.00005},{-0.0001,0},{-0.00005,0.00005}};
+    public static int maxValue;//人体承受最大辐射值
+    public static boolean setRegion=false;//是否找到设置区域
+    public static double rightLongitude=0.0;
+    public static double rightLatitude=0.0;
+    public static int rightDir=-1;
     /**
      * 五个Fragments
      */
@@ -61,11 +74,35 @@ public class MainActivity extends AppCompatActivity {
     public static final int VIEW_SETTING_INDEX = 3;
     public static final int VIEW_LOG_INDEX = 4;
     private int temp_position_index = -1;
-    public static String IP= "http://10.28.224.50:8000/";//服务器IP地址以及端口
+    public static String IP;//服务器IP地址以及端口
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        InputStream in = null;
+        Properties property = new Properties();
+        try {
+            in =getResources().openRawResource(R.raw.config);
+            property.load(in);
+            maxValue=Integer.valueOf(property.getProperty("maxValue"));
+            alarmVal=Integer.valueOf(property.getProperty("alarmVal"));
+            seriousVal=Integer.valueOf(property.getProperty("seriousVal"));
+            errorVal=Integer.valueOf(property.getProperty("errorVal"));
+            interval=Double.valueOf(property.getProperty("interval"));
+            IP=property.getProperty("IP");
+        } catch (IOException e) {
+            Log.e(TAG, "load properties error",e);
+        }finally{
+            if(in!=null){
+                try {
+                    in.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+
         locationService = new LocationService(getApplicationContext());
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_main);
@@ -101,6 +138,23 @@ public class MainActivity extends AppCompatActivity {
                         , "连接不可用", Toast.LENGTH_SHORT).show();
             }
         });
+
+        /**************************************测试数据录入*************************************/
+        if(MainActivity.testFlag){
+            if(TestMsg.findById(TestMsg.class,1)==null){
+                MsgTest test1=new MsgTest();
+                test1.new ReadTxtTask().execute();
+                try {
+                    Thread.sleep(2500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Toast.makeText(getApplicationContext(), test1.find(), Toast.LENGTH_LONG).show();
+            }
+        }
+        /**************************************日志信息记录*************************************/
+        LogMsgHelper.logSave("版本号","1.0");
+        LogMsgHelper.logSave("本次使用时间",getTime());
     }
 
     private void initView() {
@@ -288,5 +342,16 @@ public class MainActivity extends AppCompatActivity {
 
     public interface BluetoothListener{
         public void setText(String code);
+    }
+
+    /**
+     * @description: 获取当前时间
+     * @author: lyj
+     * @create: 2019/09/02
+     **/
+    private String getTime() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        String date = dateFormat.format(new java.util.Date());
+        return date;
     }
 }

@@ -1,4 +1,4 @@
-package com.example.detectradiativeresource.data;
+package com.example.detectradiativeresource.dao;
 
 import com.orm.SugarRecord;
 import com.orm.dsl.Unique;
