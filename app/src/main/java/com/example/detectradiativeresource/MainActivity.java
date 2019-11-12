@@ -57,13 +57,14 @@ public class MainActivity extends AppCompatActivity {
     public static double interval;//范围内历史轨迹点的间隔数
     public static double startLatitude;
     public static double startLongitude;
-    public static boolean testFlag=true;//是否开启测试
+    public static boolean testFlag=false;//是否开启测试
     public static double[][] directions={{0,0.0001},{0.00005,0.00005},{0.0001,0},{0.00005,-0.00005},{0,-0.0001},{-0.00005,-0.00005},{-0.0001,0},{-0.00005,0.00005}};
     public static int maxValue;//人体承受最大辐射值
     public static boolean setRegion=false;//是否找到设置区域
     public static double rightLongitude=0.0;
     public static double rightLatitude=0.0;
     public static int rightDir=-1;
+    public static int connectedState=0; //和背包连接状态，1表示处于握手状态，2表示处于复位状态，3表示在测量数据,4表示停止，0表示无状态
     /**
      * 五个Fragments
      */

@@ -52,6 +52,7 @@ public class DeviceList extends Activity {
     private ArrayAdapter<String> mPairedDevicesArrayAdapter;
     private Set<BluetoothDevice> pairedDevices;
     private Button scanButton;
+    private Button returnButton;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,6 +79,15 @@ public class DeviceList extends Activity {
         scanButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 doDiscovery();
+            }
+        });
+
+        //返回按钮
+        returnButton = (Button) findViewById(R.id.button_return);
+        returnButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
             }
         });
 

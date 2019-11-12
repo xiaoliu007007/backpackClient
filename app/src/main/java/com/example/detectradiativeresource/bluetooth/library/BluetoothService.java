@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.UUID;
 
 @SuppressLint("NewApi")
@@ -355,19 +356,30 @@ public class BluetoothService {
             // Keep listening to the InputStream while connected
             while (true) {
                 try {
-                    int data = mmInStream.read();
-                    if(data == 0x0A) { 
-                    } else if(data == 0x0D) {
-                        buffer = new byte[arr_byte.size()];
-                        for(int i = 0 ; i < arr_byte.size() ; i++) {
-                            buffer[i] = arr_byte.get(i).byteValue();
+                    synchronized (this){
+                        int data = mmInStream.read();
+                        Calendar calendar=Calendar.getInstance();
+                        Log.i(TAG, "接受的数据！！！！！！: " + data+" seconds:"+calendar.get(Calendar.SECOND));
+                        if(data == 0x0D) {
+                        } else if(data == 0x0A) {
+                            buffer = new byte[arr_byte.size()];
+                            for(int i = 0 ; i < arr_byte.size() ; i++) {
+                                buffer[i] = arr_byte.get(i).byteValue();
+                            }
+                            if(buffer.length>0){
+                                String ans="";
+                                for(byte n:buffer){
+                                    ans+=String.valueOf(n)+",";
+                                }
+                                Log.i(TAG, "第一次接受的数据！！！！！！: " + ans);
+                            }
+                            // Send the obtained bytes to the UI Activity
+                            mHandler.obtainMessage(BluetoothState.MESSAGE_READ
+                                    , buffer.length, -1, buffer).sendToTarget();
+                            arr_byte = new ArrayList<Integer>();
+                        } else {
+                            arr_byte.add(data);
                         }
-                        // Send the obtained bytes to the UI Activity
-                        mHandler.obtainMessage(BluetoothState.MESSAGE_READ
-                                , buffer.length, -1, buffer).sendToTarget();
-                        arr_byte = new ArrayList<Integer>();
-                    } else {
-                        arr_byte.add(data);
                     }
                 } catch (IOException e) {
                     connectionLost();
@@ -377,6 +389,7 @@ public class BluetoothService {
                 }
             }
         }
+
 
         // Write to the connected OutStream.
         // @param buffer  The bytes to write

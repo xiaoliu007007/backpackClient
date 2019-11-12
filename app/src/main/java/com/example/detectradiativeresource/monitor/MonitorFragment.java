@@ -175,8 +175,7 @@ public class MonitorFragment extends Fragment{
                     longitude = location.getLongitude();
                     MainActivity.latitude=latitude;
                     MainActivity.longitude=longitude;
-                    Log.i(TAG, "onReceiveLocation: "+"纬度："+Double.toString(latitude)+"；经度：" +
-                            Double.toString(longitude) + "；精准度"+ location.getRadius());
+                    //Log.i(TAG, "onReceiveLocation: "+"纬度："+Double.toString(latitude)+"；经度：" + Double.toString(longitude) + "；精准度"+ location.getRadius());
                     mBaiduMap.setMyLocationData(locData);
                     LatLng ll = new LatLng(location.getLatitude(),
                             location.getLongitude());
@@ -220,15 +219,15 @@ public class MonitorFragment extends Fragment{
                     setMarker();
                     if(!MainActivity.setRegion){
                         if(flag==0){
-                            Log.i(TAG, "寻找起点");
+                            //Log.i(TAG, "寻找起点");
                             findStart();
                         }
                         if(flag==1||flag==2){
-                            Log.i(TAG, "开始导航");
+                            //Log.i(TAG, "开始导航");
                             findDirection();
                         }
                         if(flag==3){
-                            Log.i(TAG, "沿着方向");
+                            //Log.i(TAG, "沿着方向");
                             alongWithDirection();
                         }
                     }
@@ -257,13 +256,16 @@ public class MonitorFragment extends Fragment{
             public void onClick(View v) {
                 try {
                     if(isStop) {
+                        MainActivity.connectedState=1;
                         startTimer();
-                        start.setText("停止");
+                        //start.setText("停止");
                     }else{
-                        stopTimer();
-                        start.setText("开始");
+                        MainActivity.connectedState=4;
+                        startTimer();
+                        //stopTimer();
+                        //start.setText("开始");
                     }
-                    isStop = !isStop;
+                    //isStop = !isStop;
 
                 }catch (Exception e) {
                     Log.i(TAG, "onClick: " + e.toString());
@@ -272,8 +274,7 @@ public class MonitorFragment extends Fragment{
         });
         MainActivity.bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
             public void onDataReceived(byte[] data, String message) {
-                String res = new String(data);
-                UpdateUI(res);
+                handlerReceivedData(data);
             }
         });
         /**
@@ -287,13 +288,12 @@ public class MonitorFragment extends Fragment{
                 Toast.makeText(getActivity().getApplicationContext(), "预测坐标为"+ans[0]+":"+ans[1], Toast.LENGTH_LONG).show();
             }
         });
-
         setTestMsg();
         initHistoryPoint();
     }
 
     /**
-     * @description: 启动计时器
+     * @description: 启动计时器，发送数据
      * @author: lyj
      * @create: 2019/10/14
      **/
@@ -301,8 +301,38 @@ public class MonitorFragment extends Fragment{
         if(timer == null) {
             timer = new Timer();
         }
-
-        if(task == null) {
+        switch (MainActivity.connectedState){
+            case 1:
+                Message message1 = new Message();
+                message1.what = 1;
+                handler.sendMessage(message1);
+                break;
+            case 2:
+                Message message2 = new Message();
+                message2.what = 2;
+                handler.sendMessage(message2);
+                break;
+            case 3:
+                task=null;
+                task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 3;
+                        handler.sendMessage(message);
+                    }
+                };
+                timer.schedule(task, 0,2000);
+                break;
+            case 4:
+                Message message4 = new Message();
+                message4.what = 4;
+                Log.i(TAG, "-------------------------------msg-4---------------------" );
+                handler.sendMessage(message4);
+                break;
+        }
+        /*if(task == null) {
             task = new TimerTask() {
                 @Override
                 public void run() {
@@ -315,7 +345,7 @@ public class MonitorFragment extends Fragment{
         }
         if(timer != null && task != null) {
             timer.schedule(task, 0, 2000); // 0s后执行task,经过2s再次执行
-        }
+        }*/
     }
 
     /**
@@ -336,28 +366,130 @@ public class MonitorFragment extends Fragment{
     }
 
     /**
-     * @description: handler
+     * @description: handler,蓝牙协议核心
      * @author: lyj
-     * @create: 2019/10/14
+     * @create: 2019/11/12
      **/
     Handler handler = new Handler() {
         public void handleMessage(Message msg) {
-            if (msg.what == 1) {
-                String to_send = "GMA";
-                //Log.i(TAG, "handleMessage: " + to_send);
-                MainActivity.bt.send(to_send.getBytes(), true);
+            switch (msg.what){
+                case 1:
+                    byte[] data1={0x3A,0x30};
+                    MainActivity.bt.send(data1,true);
+                    Log.i(TAG, "发送的数据-1！！！！！！: " );
+                    break;
+                case 2:
+                    byte[] data2={0x3A,0x31};
+                    MainActivity.bt.send(data2,true);
+                    Log.i(TAG, "发送的数据-2！！！！！！: " );
+                    break;
+                case 3:
+                    byte[] data3={0x3A,0x35};
+                    MainActivity.bt.send(data3,true);
+                    Log.i(TAG, "发送的数据-3！！！！！！: " );
+                    break;
+                case 4:
+                    byte[] data4={0x3A,0x32};
+                    MainActivity.bt.send(data4,true);
+                    Log.i(TAG, "发送的数据-4！！！！！！: " );
+                    break;
             }
+            /*if (msg.what == 1) { //握手命令
+                String to_send = "GMA";
+                Log.i(TAG, "handleMessage: " + to_send);
+                MainActivity.bt.send(to_send.getBytes(), true);
+            }*/
             super.handleMessage(msg);
         }
     };
+
+    /**
+     * @description: 处理接受数据
+     * @author: lyj
+     * @create: 2019/11/12
+     **/
+    public void handlerReceivedData(byte[] data){
+        switch (MainActivity.connectedState){
+            case 1:
+                if(data.length!=2){
+                    Toast.makeText(getActivity().getApplicationContext(), "接受数据错误！与背包连接错误！", Toast.LENGTH_LONG).show();
+                }
+                else {
+                    if(data[0]==0x3A&&data[1]==0x32){
+                        Toast.makeText(getActivity().getApplicationContext(), "与背包连接成功", Toast.LENGTH_LONG).show();
+                        MainActivity.connectedState=3;
+                        start.setText("停止");
+                        isStop=false;
+                        startTimer();
+                    }
+                    else{
+                        Toast.makeText(getActivity().getApplicationContext(), "与背包连接失败", Toast.LENGTH_LONG).show();
+                    }
+                }
+                break;
+            case 2:
+                if(data.length!=2){
+                    Toast.makeText(getActivity().getApplicationContext(), "接受数据错误！与背包连接错误！", Toast.LENGTH_LONG).show();
+                }
+                else{
+                    if(data[0]==0x3A&&data[1]==0x31){
+                        Toast.makeText(getActivity().getApplicationContext(), "复位启动成功", Toast.LENGTH_LONG).show();
+                        MainActivity.connectedState=3;
+                        start.setText("停止");
+                        isStop=false;
+                        startTimer();
+                    }
+                    else{
+                        Toast.makeText(getActivity().getApplicationContext(), "复位启动失败", Toast.LENGTH_LONG).show();
+                    }
+                }
+                break;
+            case 3:
+                UpdateUI(data);
+                break;
+            case 4:
+                if(data.length!=2){
+                    Toast.makeText(getActivity().getApplicationContext(), "接受数据错误！与背包连接错误！", Toast.LENGTH_LONG).show();
+                }
+                else {
+                    if(data[0]==0x3A&&data[1]==0x31){
+                        Toast.makeText(getActivity().getApplicationContext(), "停止成功", Toast.LENGTH_LONG).show();
+                        MainActivity.connectedState=0;
+                        start.setText("开始");
+                        isStop=true;
+                        valView.setText("未测试");
+                        valView.setBackgroundColor(Color.WHITE);
+                        stopTimer();
+                    }
+                    else{
+                        Toast.makeText(getActivity().getApplicationContext(), "停止失败", Toast.LENGTH_LONG).show();
+                    }
+                }
+                break;
+        }
+    }
+    /**
+     * @description:获取辐射值
+     * @author: lyj
+     * @create: 2019/11/12
+     **/
+    private int getVal(byte[] data,int start,int end){
+        int ans=0;
+        for(int i=start;i<=end;i++){
+            ans+=data[i]*Math.pow(16,2*(i-start));
+        }
+        Log.i(TAG, "计算的数据是！！！！！！: " + ans);
+        return ans;
+    }
+
     /**
      * @description: 更新页面
      * @author: lyj
      * @create: 2019/10/14
      **/
-    private void UpdateUI(String data) {
-        measureVal=data.substring(5, 9);
-        int val=Integer.parseInt(measureVal);
+    private void UpdateUI(byte[] data) {
+        int val=getVal(data,1,4); //1-4位是获取的数值
+        measureVal=String.valueOf(val);
         if(val>MainActivity.errorVal){
             ColorStatus = 4;
             valView.setBackgroundColor(Color.YELLOW);
@@ -413,14 +545,14 @@ public class MonitorFragment extends Fragment{
      **/
     public void setMarker(){
         if(measureVal==null||measureVal.length()==0){
-            Log.i(TAG, "measureVal---------null");
+            //Log.i(TAG, "measureVal---------null");
             return;
         }
         if(isRepeatPoint()){
-            Log.i(TAG, "repeated---------null");
+            //Log.i(TAG, "repeated---------null");
             return;
         }
-        Log.i(TAG, "find-----------------------------------------------------------------------go");
+        //Log.i(TAG, "find-----------------------------------------------------------------------go");
         Bundle mBundle = new Bundle();
         mBundle.putString("msg", measureVal);
         LatLng point = new LatLng(latitude, longitude);
