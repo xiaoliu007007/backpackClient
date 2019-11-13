@@ -10,39 +10,49 @@ import com.orm.dsl.Unique;
  **/
 public class LogMsg extends SugarRecord {
     @Unique
-    private String key;
-    private String value;
+    private String type;
+    private String startTime;
+    private String endTime;
 
     public LogMsg() {
-
     }
 
-    public LogMsg(String key, String value) {
-        this.key = key;
-        this.value = value;
+    public LogMsg(String type, String startTime, String endTime) {
+        this.type = type;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
-    public String getKey() {
-        return key;
+    public String getType() {
+        return type;
     }
 
-    public void setKey(String key) {
-        this.key = key;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public String getValue() {
-        return value;
+    public String getStartTime() {
+        return startTime;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
     }
 
     @Override
     public String toString() {
         return "LogMsg{" +
-                "key='" + key + '\'' +
-                ", value='" + value + '\'' +
+                "type='" + type + '\'' +
+                ", startTime='" + startTime + '\'' +
+                ", endTime='" + endTime + '\'' +
                 '}';
     }
 }

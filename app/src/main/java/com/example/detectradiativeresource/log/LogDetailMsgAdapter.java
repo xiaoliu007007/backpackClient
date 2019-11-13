@@ -8,20 +8,21 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.example.detectradiativeresource.R;
+import com.example.detectradiativeresource.dao.LogDetailMsg;
 import com.example.detectradiativeresource.dao.LogMsg;
 
 import java.util.List;
 
 /**
- * @description: LogAdatper
+ * @description: LogDetailMsgAdapter
  * @author: lyj
- * @create: 2019/10/15
+ * @create: 2019/11/13
  **/
-public class LogMsgAdapter extends BaseAdapter {
+public class LogDetailMsgAdapter extends BaseAdapter {
     private Context ctx;
     private LayoutInflater mLayoutInflater;
-    private List<LogMsg> list;
-    public LogMsgAdapter(Context context, List<LogMsg> list) {
+    private List<LogDetailMsg> list;
+    public LogDetailMsgAdapter(Context context, List<LogDetailMsg> list) {
         mLayoutInflater = LayoutInflater.from(context);
         this.list = list;
     }
@@ -45,30 +46,27 @@ public class LogMsgAdapter extends BaseAdapter {
         if(convertView == null)
         {
             viewHolder = new ViewHolder();
-            convertView = mLayoutInflater.inflate(R.layout.logmsg_item, null);
+            convertView = mLayoutInflater.inflate(R.layout.logdetailmsg_item, null);
             //实例化控件
-            viewHolder.id= (TextView) convertView.findViewById(R.id.item_log_id);
-            viewHolder.type = (TextView) convertView.findViewById(R.id.item_log_type);
-            viewHolder.startTime= (TextView) convertView.findViewById(R.id.item_log_start_time);
-            viewHolder.endTime = (TextView) convertView.findViewById(R.id.item_log_end_time);
+            viewHolder.id= (TextView) convertView.findViewById(R.id.item_log_detail_id);
+            viewHolder.content = (TextView) convertView.findViewById(R.id.item_log_detail_content);
+            viewHolder.time= (TextView) convertView.findViewById(R.id.item_log_detail_time);
             convertView.setTag(viewHolder);
         }else{
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
         //抽取bean对象
-        LogMsg msg = list.get(position);
+        LogDetailMsg msg = list.get(position);
         //设置控件数据
         viewHolder.id.setText(String.valueOf(msg.getId()));
-        viewHolder.type.setText(msg.getType());
-        viewHolder.startTime.setText(msg.getStartTime());
-        viewHolder.endTime.setText(msg.getEndTime());
+        viewHolder.content.setText(msg.getContent());
+        viewHolder.time.setText(msg.getTime());
         return convertView;
     }
     class ViewHolder{
         public TextView id;
-        public TextView type;
-        public TextView startTime;
-        public TextView endTime;
+        public TextView content;
+        public TextView time;
     }
 }

@@ -37,9 +37,9 @@ import com.baidu.mapapi.utils.DistanceUtil;
 import com.example.detectradiativeresource.Test.MsgTest;
 import com.example.detectradiativeresource.bluetooth.library.BluetoothSPP;
 import com.example.detectradiativeresource.dao.DataMsg;
-import com.example.detectradiativeresource.log.LogMsgHelper;
 import com.example.detectradiativeresource.monitor.trace.LocationService;
 import com.example.detectradiativeresource.utils.DBScanUtils;
+import com.example.detectradiativeresource.utils.DataHelperUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -421,6 +421,7 @@ public class MonitorFragment extends Fragment{
                         start.setText("停止");
                         isStop=false;
                         startTimer();
+                        DataHelperUtils.saveDataTotalMsg();
                     }
                     else{
                         Toast.makeText(getActivity().getApplicationContext(), "与背包连接失败", Toast.LENGTH_LONG).show();
@@ -460,6 +461,8 @@ public class MonitorFragment extends Fragment{
                         valView.setText("未测试");
                         valView.setBackgroundColor(Color.WHITE);
                         stopTimer();
+                        DataHelperUtils.dataTotalMsg_IsAlarm_Now=false;
+                        DataHelperUtils.updateDataTotalMsgTime();
                     }
                     else{
                         Toast.makeText(getActivity().getApplicationContext(), "停止失败", Toast.LENGTH_LONG).show();
@@ -497,34 +500,22 @@ public class MonitorFragment extends Fragment{
         else if(val>MainActivity.seriousVal){
             ColorStatus = 3;
             valView.setBackgroundColor(Color.MAGENTA);
-            LogMsgHelper.logSave("最近报警时间",getTime());
+            DataHelperUtils.saveLogMsg("报警","报警时间");
         }
         else if(val>MainActivity.alarmVal){
             ColorStatus = 2;
             valView.setBackgroundColor(Color.RED);
-            LogMsgHelper.logSave("最近警报时间",getTime());
+            DataHelperUtils.saveLogMsg("报警","警告时间");
         }
         else{
             ColorStatus = 1;
             valView.setBackgroundColor(Color.GREEN);
         }
-        add(measureVal);
+        DataHelperUtils.saveDataMsg(measureVal,longitude,latitude,0);
+        DataHelperUtils.updateDataTotalMsgIsAlarm();
         valView.setText(measureVal);
     }
 
-    /**
-     * @description: 存储数据
-     * @author: lyj
-     * @create: 2019/09/02
-     **/
-    private void add(String val){
-        if(longitude!=0.0&&latitude!=0.0){
-            DataMsg msg=new DataMsg(getTime(),val,longitude,latitude,0);
-            msg.save();
-            DataMsg msg1=DataMsg.find(DataMsg.class,"").get(0);
-            Log.i(TAG, "-------val: " + msg1.toString());
-        }
-    }
     /**
      * @description: 获取当前时间
      * @author: lyj
@@ -559,8 +550,9 @@ public class MonitorFragment extends Fragment{
         BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_end);
         MarkerOptions option = new MarkerOptions().position(point).icon(bitmap).draggable(true).extraInfo(mBundle).flat(true).alpha(0.5f);
         mBaiduMap.addOverlay(option);
-        DataMsg msg=new DataMsg(getTime(),measureVal,longitude,latitude,1);
-        msg.save();
+        DataHelperUtils.saveDataMsg(measureVal,longitude,latitude,1);
+        /*DataMsg msg=new DataMsg(getTime(),measureVal,longitude,latitude,1);
+        msg.save();*/
     }
     /**
      * @description: 绘制数据库轨迹点
@@ -588,7 +580,7 @@ public class MonitorFragment extends Fragment{
      * @create: 2019/09/29
      **/
     public void setTestMsg(){
-        DataMsg msg=new DataMsg(getTime(),String.valueOf(1111),116.364534,39.970186,1);
+        DataMsg msg=new DataMsg(getTime(),String.valueOf(1111),116.364534,39.970186,1,"否",DataHelperUtils.dataTotalMsg_Id_Now);
         msg.save();
     }
 

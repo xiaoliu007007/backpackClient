@@ -26,11 +26,14 @@ import com.example.detectradiativeresource.bluetooth.library.BluetoothState;
 import com.example.detectradiativeresource.bluetooth.library.DeviceList;
 import com.example.detectradiativeresource.data.DataFragment;
 import com.example.detectradiativeresource.dao.TestMsg;
+import com.example.detectradiativeresource.data.DataTotalFragment;
+import com.example.detectradiativeresource.log.LogDetailFragment;
 import com.example.detectradiativeresource.log.LogFragment;
-import com.example.detectradiativeresource.log.LogMsgHelper;
 import com.example.detectradiativeresource.monitor.MonitorFragment;
 import com.example.detectradiativeresource.monitor.trace.LocationService;
 import com.example.detectradiativeresource.setting.SettingFragment;
+import com.example.detectradiativeresource.utils.DataHelperUtils;
+import com.example.detectradiativeresource.utils.FragmentChangeUtils;
 import com.orm.SugarContext;
 
 import java.io.IOException;
@@ -38,7 +41,8 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements DataTotalFragment.DataFragmentChangeListener,
+        DataFragment.DataTotalFragmentChangeListener, LogFragment.LogDetailFragmentChangeListener , LogDetailFragment.LogFragmentChangeListener {
     /**
      * 底部导航栏的widdget
      */
@@ -46,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private RadioGroup mNavGroup;
     private TextView bluetoothMsg;
     private FragmentTransaction mTransaction;
+    private View view;
     public static LocationService locationService;
     private FrameLayout mFlLifeRoot;
     public static BluetoothSPP bt;
@@ -68,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 五个Fragments
      */
-    Fragment monitorFragemnt, bluetoothFragment, dataFragment,settingFragment, logFragment;
+    Fragment monitorFragemnt, bluetoothFragment, dataTotalFragment,settingFragment, logFragment,dataFragment,logDetailFragment;
     public static final int VIEW_MONITOR_INDEX = 0;
     public static final int VIEW_BLUETOOTH_INDEX = 1;
     public static final int VIEW_DATA_INDEX = 2;
@@ -154,21 +159,22 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         /**************************************日志信息记录*************************************/
-        LogMsgHelper.logSave("版本号","1.0");
-        LogMsgHelper.logSave("本次使用时间",getTime());
+        DataHelperUtils.saveLogMsg("开始","使用时间");
     }
 
     private void initView() {
         LayoutInflater inflater=(LayoutInflater)getSystemService(LAYOUT_INFLATER_SERVICE);
-        View view=inflater.inflate(R.layout.fragment_bluetooth, null);
+        view=inflater.inflate(R.layout.fragment_bluetooth, null);
         bluetoothMsg=view.findViewById(R.id.id_bluetooth_msg);
 
         mNavGroup = findViewById(R.id.id_navcontent);
         monitorFragemnt = MonitorFragment.getNewInstance();
         bluetoothFragment = BluetoothFragment.getNewInstance();
+        dataTotalFragment = DataTotalFragment.getNewInstance();
         dataFragment = DataFragment.getNewInstance();
         settingFragment = SettingFragment.getNewInstance();
         logFragment = LogFragment.getNewInstance();
+        logDetailFragment= LogDetailFragment.getNewInstance();
         mFlLifeRoot=findViewById(R.id.id_fragment_content);
         //显示
         mTransaction = getSupportFragmentManager().beginTransaction();
@@ -210,12 +216,12 @@ public class MainActivity extends AppCompatActivity {
                     startActivityForResult(intent, BluetoothState.REQUEST_CONNECT_DEVICE);
                 }
                 break;
-            case R.id.id_nav_bt_data:
+            case R.id.id_nav_bt_data: //双fragment切换
                 if (temp_position_index != VIEW_DATA_INDEX) {
                     //显示
                     mTransaction = getSupportFragmentManager().beginTransaction();
                     mFlLifeRoot.removeAllViews();
-                    mTransaction.replace(R.id.id_fragment_content, dataFragment);
+                    mTransaction.replace(R.id.id_fragment_content, dataTotalFragment);
                     mTransaction.commit();
                 }
                 temp_position_index = VIEW_DATA_INDEX;
@@ -260,6 +266,7 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         bt.stopService();
+        DataHelperUtils.saveLogMsg("退出","退出时间");
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -339,6 +346,38 @@ public class MainActivity extends AppCompatActivity {
                 });
         // 显示
         normalDialog.show();
+    }
+
+    @Override
+    public void changeDataFragment() {
+        if(FragmentChangeUtils.isDataTotalMsgFragment){
+            Log.i(TAG, "-------------changed1-------------");
+            mTransaction = getSupportFragmentManager().beginTransaction();
+            mFlLifeRoot.removeAllViews();
+            mTransaction.replace(R.id.id_fragment_content, dataTotalFragment);
+            mTransaction.commit();
+        }else{
+            mTransaction = getSupportFragmentManager().beginTransaction();
+            mFlLifeRoot.removeAllViews();
+            mTransaction.replace(R.id.id_fragment_content, dataFragment);
+            mTransaction.commit();
+        }
+    }
+
+    @Override
+    public void changeLogDetailFragment() {
+        if(FragmentChangeUtils.isLogFragment){
+            Log.i(TAG, "-------------changed1-------------");
+            mTransaction = getSupportFragmentManager().beginTransaction();
+            mFlLifeRoot.removeAllViews();
+            mTransaction.replace(R.id.id_fragment_content, logFragment);
+            mTransaction.commit();
+        }else{
+            mTransaction = getSupportFragmentManager().beginTransaction();
+            mFlLifeRoot.removeAllViews();
+            mTransaction.replace(R.id.id_fragment_content, logDetailFragment);
+            mTransaction.commit();
+        }
     }
 
     public interface BluetoothListener{

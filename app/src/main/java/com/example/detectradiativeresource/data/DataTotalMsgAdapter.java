@@ -6,8 +6,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+
 import com.example.detectradiativeresource.R;
 import com.example.detectradiativeresource.dao.DataMsg;
+import com.example.detectradiativeresource.dao.DataTotalMsg;
 
 import java.util.List;
 
@@ -16,11 +18,11 @@ import java.util.List;
  * @author: lyj
  * @create: 2019/09/02
  **/
-public class DataMsgAdapter extends BaseAdapter {
+public class DataTotalMsgAdapter extends BaseAdapter {
     private Context ctx;
     private LayoutInflater mLayoutInflater;
-    private List<DataMsg> list;
-    public DataMsgAdapter(Context context, List<DataMsg> list) {
+    private List<DataTotalMsg> list;
+    public DataTotalMsgAdapter(Context context, List<DataTotalMsg> list) {
         mLayoutInflater = LayoutInflater.from(context);
         this.list = list;
     }
@@ -44,36 +46,30 @@ public class DataMsgAdapter extends BaseAdapter {
         if(convertView == null)
         {
             viewHolder = new ViewHolder();
-            convertView = mLayoutInflater.inflate(R.layout.datamsg_item, null);
+            convertView = mLayoutInflater.inflate(R.layout.datatotalmsg_item, null);
             //实例化控件
-            viewHolder.viewId=(TextView) convertView.findViewById(R.id.item_id);
-            viewHolder.time= (TextView) convertView.findViewById(R.id.item_time);
-            viewHolder.value = (TextView) convertView.findViewById(R.id.item_value);
-            viewHolder.longitude = (TextView) convertView.findViewById(R.id.item_longitude);
-            viewHolder.latitude = (TextView) convertView.findViewById(R.id.item_latitude);
-            viewHolder.isAlarm=(TextView) convertView.findViewById(R.id.item_isAlarm);
+            viewHolder.viewId=(TextView) convertView.findViewById(R.id.item_total_id);
+            viewHolder.start_time= (TextView) convertView.findViewById(R.id.item_total_start_time);
+            viewHolder.end_time = (TextView) convertView.findViewById(R.id.item_total_end_time);
+            viewHolder.isAlarm=(TextView) convertView.findViewById(R.id.item_total_isAlarm);
             convertView.setTag(viewHolder);
         }else{
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
         //抽取bean对象
-        DataMsg msg = list.get(position);
+        DataTotalMsg msg = list.get(position);
         //设置控件数据
         viewHolder.viewId.setText(String.valueOf(msg.getId()));
-        viewHolder.time.setText(msg.getTime());
-        viewHolder.value.setText(msg.getValue());
-        viewHolder.longitude.setText(String.valueOf(msg.getLongitude()));
-        viewHolder.latitude.setText(String.valueOf(msg.getLatitude()));
+        viewHolder.start_time.setText(msg.getStartTime());
+        viewHolder.end_time.setText(msg.getEndTime()==null?"-":msg.getEndTime());
         viewHolder.isAlarm.setText(msg.getIsAlarm());
         return convertView;
     }
     class ViewHolder{
         public TextView viewId;
-        public TextView time;
-        public TextView value;
-        public TextView longitude;
-        public TextView latitude;
+        public TextView start_time;
+        public TextView end_time;
         public TextView isAlarm;
     }
 }

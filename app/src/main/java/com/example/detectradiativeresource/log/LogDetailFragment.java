@@ -9,28 +9,30 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ListView;
 
 import com.example.detectradiativeresource.R;
+import com.example.detectradiativeresource.dao.LogDetailMsg;
 import com.example.detectradiativeresource.dao.LogMsg;
 import com.example.detectradiativeresource.utils.DataHelperUtils;
 import com.example.detectradiativeresource.utils.FragmentChangeUtils;
 
 import java.util.List;
 
-public class LogFragment extends Fragment{
+public class LogDetailFragment extends Fragment{
     // 缓存Fragment view
-    LogDetailFragmentChangeListener myListener;
+    LogFragmentChangeListener myListener;
     private View rootView;
-    private static LogFragment logFragment;
+    private static LogDetailFragment logFragment;
     private ListView infoList;
-    private LogMsgAdapter mAdapter;
-    private List<LogMsg> mdata;
+    private LogDetailMsgAdapter mAdapter;
+    private List<LogDetailMsg> mdata;
 
-    public LogFragment(){}
-    public static LogFragment getNewInstance(){
+    public LogDetailFragment(){}
+    public static LogDetailFragment getNewInstance(){
         if (logFragment ==null){
-            logFragment =new LogFragment();
+            logFragment =new LogDetailFragment();
         }
         return logFragment;
     }
@@ -41,7 +43,7 @@ public class LogFragment extends Fragment{
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        rootView = inflater.inflate(R.layout.fragment_log, container, false);
+        rootView = inflater.inflate(R.layout.fragment_logdetail, container, false);
         init(rootView);
         return rootView;
     }
@@ -52,26 +54,22 @@ public class LogFragment extends Fragment{
     }
 
     private void init(View view){
-        infoList = (ListView) view.findViewById(R.id.log_list);
-        mdata = DataHelperUtils.findAllLogMsg();
-        mAdapter = new LogMsgAdapter(getActivity(), mdata);
+        infoList = (ListView) view.findViewById(R.id.log_detail_list);
+        mdata = DataHelperUtils.findLogDetailMsgByParent(FragmentChangeUtils.logMsgId);
+        mAdapter = new LogDetailMsgAdapter(getActivity(), mdata);
         infoList.setAdapter(mAdapter);
-        infoList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        Button reButton = (Button)view.findViewById(R.id.log_return);
+        reButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                long id= DataHelperUtils.findLogMsgId(i);
-                if(id>0){
-                    FragmentChangeUtils.logMsgId=id;
-                    FragmentChangeUtils.isLogFragment=false;
-                    myListener.changeLogDetailFragment();
-                }
+            public void onClick(View view) {
+                FragmentChangeUtils.isLogFragment=true;
+                myListener.changeLogDetailFragment();
             }
         });
         infoList.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
             public void onCreateContextMenu(ContextMenu menu, View v,
                                             ContextMenu.ContextMenuInfo menuInfo) {
-                menu.add(0, 0, 0, "查看");
-                menu.add(0, 1, 0, "删除");
+                menu.add(0, 0, 0, "删除");
 
             }
         });
@@ -82,17 +80,9 @@ public class LogFragment extends Fragment{
         int position=info.position;
         switch (item.getItemId()) {
             case 0:
-                long id= DataHelperUtils.findLogMsgId(position);
-                if(id>0){
-                    FragmentChangeUtils.logMsgId=id;
-                    FragmentChangeUtils.isLogFragment=false;
-                    myListener.changeLogDetailFragment();
-                }
-                break;
-            case 1:
-                long deleteId= DataHelperUtils.findLogMsgId(position);
+                long deleteId= DataHelperUtils.findLogDetailMsgId(FragmentChangeUtils.logMsgId,position);
                 if(deleteId>0){
-                    DataHelperUtils.deleteLogMsgById(deleteId);
+                    DataHelperUtils.deleteLogDetailMsgId(deleteId);
                 }
                 init(rootView);
                 break;
@@ -103,10 +93,10 @@ public class LogFragment extends Fragment{
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        myListener=(LogDetailFragmentChangeListener)activity;
+        myListener=(LogFragmentChangeListener)activity;
     }
 
-    public interface LogDetailFragmentChangeListener{
+    public interface LogFragmentChangeListener{
         public void changeLogDetailFragment();
     }
 
