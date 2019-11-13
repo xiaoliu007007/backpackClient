@@ -59,7 +59,7 @@ public class LogDetailMsgAdapter extends BaseAdapter {
         //抽取bean对象
         LogDetailMsg msg = list.get(position);
         //设置控件数据
-        viewHolder.id.setText(String.valueOf(msg.getId()));
+        viewHolder.id.setText(String.valueOf(position+1));
         viewHolder.content.setText(msg.getContent());
         viewHolder.time.setText(msg.getTime());
         return convertView;

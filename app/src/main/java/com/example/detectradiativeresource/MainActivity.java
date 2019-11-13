@@ -86,7 +86,6 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         InputStream in = null;
         Properties property = new Properties();
         try {

@@ -60,7 +60,7 @@ public class DataMsgAdapter extends BaseAdapter {
         //抽取bean对象
         DataMsg msg = list.get(position);
         //设置控件数据
-        viewHolder.viewId.setText(String.valueOf(msg.getId()));
+        viewHolder.viewId.setText(String.valueOf(position+1));
         viewHolder.time.setText(msg.getTime());
         viewHolder.value.setText(msg.getValue());
         viewHolder.longitude.setText(String.valueOf(msg.getLongitude()));

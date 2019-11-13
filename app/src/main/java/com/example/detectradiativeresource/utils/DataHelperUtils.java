@@ -4,11 +4,13 @@ import android.util.Log;
 
 import com.example.detectradiativeresource.MainActivity;
 import com.example.detectradiativeresource.dao.DataMsg;
+import com.example.detectradiativeresource.dao.DataMsgWrapper;
 import com.example.detectradiativeresource.dao.DataTotalMsg;
 import com.example.detectradiativeresource.dao.LogDetailMsg;
 import com.example.detectradiativeresource.dao.LogMsg;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DataHelperUtils {
@@ -35,8 +37,10 @@ public class DataHelperUtils {
      **/
     public static void updateDataTotalMsgTime(){
         DataTotalMsg msg=DataTotalMsg.findById(DataTotalMsg.class,dataTotalMsg_Id_Now);
-        msg.setEndTime(getTime());
-        msg.save();
+        if(msg!=null){
+            msg.setEndTime(getTime());
+            msg.save();
+        }
     }
 
     /**

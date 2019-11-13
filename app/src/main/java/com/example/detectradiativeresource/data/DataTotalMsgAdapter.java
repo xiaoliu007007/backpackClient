@@ -60,7 +60,7 @@ public class DataTotalMsgAdapter extends BaseAdapter {
         //抽取bean对象
         DataTotalMsg msg = list.get(position);
         //设置控件数据
-        viewHolder.viewId.setText(String.valueOf(msg.getId()));
+        viewHolder.viewId.setText(String.valueOf(position+1));
         viewHolder.start_time.setText(msg.getStartTime());
         viewHolder.end_time.setText(msg.getEndTime()==null?"-":msg.getEndTime());
         viewHolder.isAlarm.setText(msg.getIsAlarm());

@@ -141,15 +141,17 @@ public class MonitorFragment extends Fragment{
         locationService.start();
 
     }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+        Message message4 = new Message();
+        message4.what = 4;
+        handler.sendMessage(message4);
+        myStop();
+    }
     @Override
     public void onStop() {
-        locationService.unregisterListener(mListener); //注销掉监听
-        locationService.stop(); //停止定位服务
-        longitude=0.0;
-        latitude=0.0;
-        ColorStatus = 0;
-        stopTimer();
-        start.setText("开始");
         super.onStop();
     }
     private BDLocationListener mListener = new BDLocationListener() {
@@ -328,24 +330,9 @@ public class MonitorFragment extends Fragment{
             case 4:
                 Message message4 = new Message();
                 message4.what = 4;
-                Log.i(TAG, "-------------------------------msg-4---------------------" );
                 handler.sendMessage(message4);
                 break;
         }
-        /*if(task == null) {
-            task = new TimerTask() {
-                @Override
-                public void run() {
-                    // 需要做的事:发送消息
-                    Message message = new Message();
-                    message.what = 1;
-                    handler.sendMessage(message);
-                }
-            };
-        }
-        if(timer != null && task != null) {
-            timer.schedule(task, 0, 2000); // 0s后执行task,经过2s再次执行
-        }*/
     }
 
     /**
@@ -376,17 +363,14 @@ public class MonitorFragment extends Fragment{
                 case 1:
                     byte[] data1={0x3A,0x30};
                     MainActivity.bt.send(data1,true);
-                    Log.i(TAG, "发送的数据-1！！！！！！: " );
                     break;
                 case 2:
                     byte[] data2={0x3A,0x31};
                     MainActivity.bt.send(data2,true);
-                    Log.i(TAG, "发送的数据-2！！！！！！: " );
                     break;
                 case 3:
                     byte[] data3={0x3A,0x35};
                     MainActivity.bt.send(data3,true);
-                    Log.i(TAG, "发送的数据-3！！！！！！: " );
                     break;
                 case 4:
                     byte[] data4={0x3A,0x32};
@@ -394,11 +378,6 @@ public class MonitorFragment extends Fragment{
                     Log.i(TAG, "发送的数据-4！！！！！！: " );
                     break;
             }
-            /*if (msg.what == 1) { //握手命令
-                String to_send = "GMA";
-                Log.i(TAG, "handleMessage: " + to_send);
-                MainActivity.bt.send(to_send.getBytes(), true);
-            }*/
             super.handleMessage(msg);
         }
     };
@@ -455,14 +434,7 @@ public class MonitorFragment extends Fragment{
                 else {
                     if(data[0]==0x3A&&data[1]==0x31){
                         Toast.makeText(getActivity().getApplicationContext(), "停止成功", Toast.LENGTH_LONG).show();
-                        MainActivity.connectedState=0;
-                        start.setText("开始");
-                        isStop=true;
-                        valView.setText("未测试");
-                        valView.setBackgroundColor(Color.WHITE);
-                        stopTimer();
-                        DataHelperUtils.dataTotalMsg_IsAlarm_Now=false;
-                        DataHelperUtils.updateDataTotalMsgTime();
+                        myStop();
                     }
                     else{
                         Toast.makeText(getActivity().getApplicationContext(), "停止失败", Toast.LENGTH_LONG).show();
@@ -470,6 +442,16 @@ public class MonitorFragment extends Fragment{
                 }
                 break;
         }
+    }
+    public void myStop(){
+        MainActivity.connectedState=0;
+        start.setText("开始");
+        isStop=true;
+        valView.setText("未测试");
+        valView.setBackgroundColor(Color.WHITE);
+        stopTimer();
+        DataHelperUtils.dataTotalMsg_IsAlarm_Now=false;
+        DataHelperUtils.updateDataTotalMsgTime();
     }
     /**
      * @description:获取辐射值
