@@ -25,6 +25,7 @@ public class BluetoothFragment extends Fragment implements MainActivity.Bluetoot
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
     }
 
     @Override

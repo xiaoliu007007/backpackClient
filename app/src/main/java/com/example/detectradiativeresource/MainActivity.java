@@ -2,9 +2,15 @@ package com.example.detectradiativeresource;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
@@ -21,9 +27,11 @@ import android.widget.Toast;
 import com.baidu.mapapi.SDKInitializer;
 import com.example.detectradiativeresource.Test.MsgTest;
 import com.example.detectradiativeresource.bluetooth.BluetoothFragment;
+import com.example.detectradiativeresource.bluetooth.library.BluetoothLeService;
 import com.example.detectradiativeresource.bluetooth.library.BluetoothSPP;
 import com.example.detectradiativeresource.bluetooth.library.BluetoothState;
 import com.example.detectradiativeresource.bluetooth.library.DeviceList;
+import com.example.detectradiativeresource.bluetooth.library.DeviceScanActivity;
 import com.example.detectradiativeresource.data.DataFragment;
 import com.example.detectradiativeresource.dao.TestMsg;
 import com.example.detectradiativeresource.data.DataTotalFragment;
@@ -83,6 +91,91 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static String IP;//服务器IP地址以及端口
 
 
+    public static BluetoothLeService mBluetoothLeService;
+    private String address;
+    public OnDataListener onDataListener;
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder service) {
+            mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
+            if (!mBluetoothLeService.initialize()) {
+                Log.e(TAG, "Unable to initialize Bluetooth");
+            }
+            // Automatically connects to the device upon successful start-up initialization.
+            mBluetoothLeService.connect(address);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            mBluetoothLeService = null;
+        }
+    };
+
+    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
+
+            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
+                mBluetoothLeService.connect(address);
+            } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
+                //特征值找到才代表连接成功
+            }else if (BluetoothLeService.ACTION_GATT_SERVICES_NO_DISCOVERED.equals(action)){
+                mBluetoothLeService.connect(address);
+            }else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
+                //displayData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA));
+                byte[] data=intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+                for(byte d:data){
+                    Log.d(TAG, "MainActivity send 数据啦--------------"+d);
+                }
+                /*MonitorFragment monitor =
+                        (MonitorFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
+                monitor.handlerReceivedData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA));*/
+
+            }else if (BluetoothLeService.ACTION_WRITE_SUCCESSFUL.equals(action)) {
+               /* mSendBytes.setText(sendBytes + " ");
+                if (sendDataLen>0)
+                {
+                    Log.v("log","Write OK,Send again");
+                    //onSendBtnClicked();
+                }
+                else {
+                    Log.v("log","Write Finish");
+                }*/
+            }
+
+        }
+    };
+    public interface OnDataListener {
+        public void onDataChange(byte[] data);
+
+    }
+
+
+    private static IntentFilter makeGattUpdateIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(BluetoothLeService.ACTION_WRITE_SUCCESSFUL);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_NO_DISCOVERED);
+        return intentFilter;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+        if (mBluetoothLeService != null) {
+            final boolean result = mBluetoothLeService.connect(address);
+            Log.d(TAG, "Connect request result=" + result);
+        }
+    }
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,9 +208,13 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
 
         SugarContext.init(this);
         /**************************************蓝牙配置页面*************************************/
+        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+
         bt = new BluetoothSPP(this);
+
         bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
-            public void onDataReceived(byte[] data, String message) {
+            public void onDataReceived(int[] data, String message) {
 
             }
         });
@@ -202,18 +299,20 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     mTransaction.commit();
                 }
                 temp_position_index = VIEW_BLUETOOTH_INDEX;
-                if (bt.getServiceState() == BluetoothState.STATE_CONNECTED) {
+                Intent intent = new Intent(getApplicationContext(), DeviceScanActivity.class);
+                startActivityForResult(intent,BluetoothState.REQUEST_CONNECT_DEVICE);
+                /*if (bt.getServiceState() == BluetoothState.STATE_CONNECTED) {
                     showbluetoothDialog();
                     //bt.disconnect();
                 } else {
                     //显示
-                        /*mTransaction = getSupportFragmentManager().beginTransaction();
+                        mTransaction = getSupportFragmentManager().beginTransaction();
                         mFlLifeRoot.removeAllViews();
                         mTransaction.replace(R.id.id_fragment_content, bluetoothFragment);
-                        mTransaction.commit();*/
+                        mTransaction.commit();
                     Intent intent = new Intent(getApplicationContext(), DeviceList.class);
                     startActivityForResult(intent, BluetoothState.REQUEST_CONNECT_DEVICE);
-                }
+                }*/
                 break;
             case R.id.id_nav_bt_data: //双fragment切换
                 if (temp_position_index != VIEW_DATA_INDEX) {
@@ -269,21 +368,33 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
+        if (resultCode == Activity.RESULT_OK){
+            address = data.getExtras().getString(BluetoothState.EXTRA_DEVICE_ADDRESS);
+            String deviceName = data.getExtras().getString(BluetoothState.EXTRAS_DEVICE_NAME);
+            Log.i(TAG, "--------------address is "+address);
+            mBluetoothLeService.connect(address);
+            //bt.connect(data);
+        }
+        /*if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
             if (resultCode == Activity.RESULT_OK){
-                bt.connect(data);
+                String address = data.getExtras().getString(BluetoothState.EXTRA_DEVICE_ADDRESS);
+                Log.i(TAG, "--------------address is "+address);
+                mBluetoothLeService.connect(address);
+                //bt.connect(data);
             }
         } else if (requestCode == BluetoothState.REQUEST_ENABLE_BT) {
             if (resultCode == Activity.RESULT_OK) {
-                bt.setupService();
-                bt.startService(BluetoothState.DEVICE_OTHER);
+                String address = data.getExtras().getString(BluetoothState.EXTRA_DEVICE_ADDRESS);
+                mBluetoothLeService.connect(address);
+                //bt.setupService();
+                //bt.startService(BluetoothState.DEVICE_OTHER);
             } else {
                 Toast.makeText(getApplicationContext()
                         , "蓝牙不可用"
                         , Toast.LENGTH_SHORT).show();
                 finish();
             }
-        }
+        }*/
     }
 
     //处理已有蓝牙连接，用户强行点击蓝牙配置

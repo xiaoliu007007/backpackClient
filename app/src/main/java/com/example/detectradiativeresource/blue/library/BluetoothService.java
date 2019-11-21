@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.detectradiativeresource.bluetooth.library;
+package com.example.detectradiativeresource.blue.library;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
@@ -56,7 +56,7 @@ public class BluetoothService {
     private ConnectedThread mConnectedThread;
     private int mState;
     private boolean isAndroid = BluetoothState.DEVICE_ANDROID;
-        
+
     // Constructor. Prepares a new BluetoothChat session
     // context : The UI Activity Context
     // handler : A Handler to send messages back to the UI Activity
@@ -65,31 +65,33 @@ public class BluetoothService {
         mState = BluetoothState.STATE_NONE;
         mHandler = handler;
     }
-    
+
+
     // Set the current state of the chat connection
     // state : An integer defining the current connection state
     private synchronized void setState(int state) {
         Log.d(TAG, "setState() " + mState + " -> " + state);
         mState = state;
+
         // Give the new state to the Handler so the UI Activity can update
         mHandler.obtainMessage(BluetoothState.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
 
-    // Return the current connection state. 
+    // Return the current connection state.
     public synchronized int getState() {
         return mState;
     }
 
     // Start the chat service. Specifically start AcceptThread to begin a
-    // session in listening (server) mode. Called by the Activity onResume() 
+    // session in listening (server) mode. Called by the Activity onResume()
     public synchronized void start(boolean isAndroid) {
         // Cancel any thread attempting to make a connection
         if (mConnectThread != null) {mConnectThread.cancel(); mConnectThread = null;}
         // Cancel any thread currently running a connection
         if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
-        
+
         setState(BluetoothState.STATE_LISTEN);
-        
+
         // Start the thread to listen on a BluetoothServerSocket
         if (mSecureAcceptThread == null) {
             mSecureAcceptThread = new AcceptThread(isAndroid);

@@ -15,7 +15,7 @@
  */
 
 
-package com.example.detectradiativeresource.bluetooth.library;
+package com.example.detectradiativeresource.blue.library;
 
 public class BluetoothState {
     // Constants that indicate the current connection state
@@ -46,6 +46,5 @@ public class BluetoothState {
     
     // Return Intent extra
     public static String EXTRA_DEVICE_ADDRESS = "device_address";
-    public static String EXTRAS_DEVICE_NAME="device_name";
     
 }

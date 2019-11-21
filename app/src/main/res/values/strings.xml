@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">背包寻源</string>
+    <string name="title_devices">BLE SPP</string>
+    <string name="ble_not_supported">BLE is not supported</string>
+    <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
+    <string name="unknown_device">Unknown device</string>
+    <string name="ble_need_location">Android6.0蓝牙需要开启</string>
+    <string name="menu_scan">Scan</string>
+    <string name="menu_stop">Stop</string>
+    <string name="menu_connect">Connect</string>
+    <string name="menu_disconnect">Disconnect</string>
 </resources>

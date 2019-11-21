@@ -32,7 +32,11 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * @description: 数据管理二级列表
+ * @author: lyj
+ * @create: 2019/11/13
+ **/
 public class DataFragment extends Fragment{
     private static final String TAG = "DataFragment";
     // 缓存Fragment view

@@ -20,6 +20,11 @@ import com.example.detectradiativeresource.utils.FragmentChangeUtils;
 
 import java.util.List;
 
+/**
+ * @description: 日志二级列表
+ * @author: lyj
+ * @create: 2019/11/13
+ **/
 public class LogDetailFragment extends Fragment{
     // 缓存Fragment view
     LogFragmentChangeListener myListener;

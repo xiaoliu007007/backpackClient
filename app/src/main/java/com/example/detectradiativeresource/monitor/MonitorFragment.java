@@ -275,7 +275,7 @@ public class MonitorFragment extends Fragment{
             }
         });
         MainActivity.bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
-            public void onDataReceived(byte[] data, String message) {
+            public void onDataReceived(int[] data, String message) {
                 handlerReceivedData(data);
             }
         });
@@ -361,33 +361,49 @@ public class MonitorFragment extends Fragment{
         public void handleMessage(Message msg) {
             switch (msg.what){
                 case 1:
-                    byte[] data1={0x3A,0x30};
-                    MainActivity.bt.send(data1,true);
+                    byte[] data1={0x3A,0x30,0x0D,0x0A};
+                    //MainActivity.bt.send(data1,true);
+                    MainActivity.mBluetoothLeService.writeData(data1);
+                    Log.i(TAG, "发送的数据-1！！！！！！: " );
                     break;
                 case 2:
-                    byte[] data2={0x3A,0x31};
-                    MainActivity.bt.send(data2,true);
+                    byte[] data2={0x3A,0x31,0x0D,0x0A};
+                    //MainActivity.bt.send(data2,true);
+                    MainActivity.mBluetoothLeService.writeData(data2);
+                    Log.i(TAG, "发送的数据-2！！！！！！: " );
                     break;
                 case 3:
-                    byte[] data3={0x3A,0x35};
-                    MainActivity.bt.send(data3,true);
+                    byte[] data3={0x3A,0x35,0x0D,0x0A};
+                    //MainActivity.bt.send(data3,true);
+                    MainActivity.mBluetoothLeService.writeData(data3);
+                    Log.i(TAG, "发送的数据-3！！！！！！: " );
                     break;
                 case 4:
-                    byte[] data4={0x3A,0x32};
-                    MainActivity.bt.send(data4,true);
+                    byte[] data4={0x3A,0x32,0x0D,0x0A};
+                    //MainActivity.bt.send(data4,true);
+                    MainActivity.mBluetoothLeService.writeData(data4);
                     Log.i(TAG, "发送的数据-4！！！！！！: " );
                     break;
             }
             super.handleMessage(msg);
         }
     };
+    public void handlerReceivedData(byte[] data){
+        for(byte d:data){
+            Log.d(TAG, "收到的数据！！！！！！！！！" + d);
+        }
+    }
+
 
     /**
      * @description: 处理接受数据
      * @author: lyj
      * @create: 2019/11/12
      **/
-    public void handlerReceivedData(byte[] data){
+    public void handlerReceivedData(int[] data){
+        for(int d:data){
+            Log.d(TAG, "收到的数据！！！！！！！！！" + d);
+        }
         switch (MainActivity.connectedState){
             case 1:
                 if(data.length!=2){
@@ -458,7 +474,7 @@ public class MonitorFragment extends Fragment{
      * @author: lyj
      * @create: 2019/11/12
      **/
-    private int getVal(byte[] data,int start,int end){
+    private int getVal(int[] data,int start,int end){
         int ans=0;
         for(int i=start;i<=end;i++){
             ans+=data[i]*Math.pow(16,2*(i-start));
@@ -472,7 +488,10 @@ public class MonitorFragment extends Fragment{
      * @author: lyj
      * @create: 2019/10/14
      **/
-    private void UpdateUI(byte[] data) {
+    private void UpdateUI(int[] data) {
+        for(int d:data){
+            Log.i(TAG, "计算的数据内容是！！！！！！: " + d);
+        }
         int val=getVal(data,1,4); //1-4位是获取的数值
         measureVal=String.valueOf(val);
         if(val>MainActivity.errorVal){

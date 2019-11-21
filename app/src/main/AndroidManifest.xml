@@ -16,6 +16,7 @@
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -54,6 +55,8 @@
         <activity android:name=".route.BNaviGuideActivity" />
         <activity android:name=".route.BNaviMainActivity" />
         <activity android:name=".route.WNaviGuideActivity" />
+        <activity android:name="com.example.detectradiativeresource.bluetooth.library.DeviceScanActivity" />
+        <service android:name="com.example.detectradiativeresource.bluetooth.library.BluetoothLeService" android:enabled="true"/>
     </application>
 
 </manifest>
