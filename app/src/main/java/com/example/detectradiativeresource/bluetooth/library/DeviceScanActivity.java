@@ -55,7 +55,7 @@ public class DeviceScanActivity extends ListActivity {
 
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 20000;
+    private static final long SCAN_PERIOD = 10000;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

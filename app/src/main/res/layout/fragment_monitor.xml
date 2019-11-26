@@ -3,12 +3,36 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <RelativeLayout
+        android:id="@+id/id_top_tags"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:background="@drawable/bt_tag_bg"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/id_r_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:gravity="center"
+            android:text="当前辐射值"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/id_r_val"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:layout_alignLeft="@id/id_r_view"
+            android:layout_marginLeft="100dp"
+            android:gravity="center"
+            android:text="未预测"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true">
+        android:layout_below="@+id/id_top_tags">
 
         <com.baidu.mapapi.map.MapView
             android:id="@+id/bmapView"
@@ -25,21 +49,6 @@
         android:layout_alignParentBottom="true"
         android:background="@drawable/bt_tag_bg"
         android:orientation="horizontal">
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:gravity="center"
-            android:text="当前辐射值"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/get_values"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:gravity="center"
-            android:text="未预测"
-            android:textStyle="bold" />
         <Button
             android:id="@+id/start"
             android:layout_width="wrap_content"
@@ -55,6 +64,22 @@
             android:layout_alignParentRight="true"
             android:layout_weight="1"
             android:text="预测" />
+
+        <Button
+            android:id="@+id/alert_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_weight="1"
+            android:text="关闭报警" />
+
+        <Button
+            android:id="@+id/get_spectrum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_weight="1"
+            android:text="获取能谱" />
 
     </LinearLayout>
 

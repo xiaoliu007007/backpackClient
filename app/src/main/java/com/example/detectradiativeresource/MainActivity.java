@@ -92,7 +92,8 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
 
     public static BluetoothLeService mBluetoothLeService;
     private String address;
-    public static  String receivedState;//等待接受协议的状态;
+    public static String receivedState=BluetoothProtocol.NO_STATE;//等待接受协议的状态;
+    public static String alertState=BluetoothProtocol.NO_STATE;//报警状态
     public OnDataListener onDataListener;
     private static final int REQUEST_ENABLE_BT = 1;
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -140,13 +141,8 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 int i=0;
                 for(byte d:data){
                     receivedData[i++]= d<0?256 + d:d;
-                    handleReceivedData(receivedData);
-                    //Log.d(TAG, "MainActivity send 数据啦!!!!"+n);
                 }
-                /*MonitorFragment monitor =
-                        (MonitorFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
-                monitor.handlerReceivedData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA));*/
-
+                handleReceivedData(receivedData);
             }else if (BluetoothLeService.ACTION_WRITE_SUCCESSFUL.equals(action)) {
                /* mSendBytes.setText(sendBytes + " ");
                 if (sendDataLen>0)
@@ -468,10 +464,38 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static void send(String type,byte[] data){
         switch (type){
             case BluetoothProtocol.SHAKE_HANDS:
-                byte[] send={0x68,0x30,0x0D,0x0A};
-                mBluetoothLeService.writeData(send);
+                byte[] send_shake_hands={0x68,0x30,0x0D,0x0A};
+                mBluetoothLeService.writeData(send_shake_hands);
                 receivedState=BluetoothProtocol.SHAKE_HANDS;
                 Log.i(TAG, "握手中" );
+                break;
+            case BluetoothProtocol.START_MEASURE:
+                byte[] send_start_measure={0x68,0x39,0x0D,0x0A};
+                mBluetoothLeService.writeData(send_start_measure);
+                receivedState=BluetoothProtocol.START_MEASURE;
+                Log.i(TAG, "启动测量中" );
+                break;
+            case BluetoothProtocol.GET_DATA:
+                byte[] send_get_data={0x68,0x31,0x0D,0x0A};
+                mBluetoothLeService.writeData(send_get_data);
+                receivedState=BluetoothProtocol.GET_DATA;
+                Log.i(TAG, "获取数据中" );
+                break;
+            case BluetoothProtocol.STOP_MEASURE:
+                byte[] send_stop_data={0x68,0x33,0x0D,0x0A};
+                mBluetoothLeService.writeData(send_stop_data);
+                receivedState=BluetoothProtocol.STOP_MEASURE;
+                Log.i(TAG, "停止测量中" );
+            case BluetoothProtocol.ALERT_START:
+                byte[] send_alert_start={0x68,0x33,0x0D,0x0A};
+                mBluetoothLeService.writeData(send_alert_start);
+                Log.i(TAG, "收到报警" );
+                break;
+            case BluetoothProtocol.ALERT_CLOSE:
+                byte[] send_alert_close={0x68,0x42,0x0D,0x0A};
+                mBluetoothLeService.writeData(send_alert_close);
+                alertState=BluetoothProtocol.ALERT_CLOSE;
+                Log.i(TAG, "关闭报警" );
                 break;
         }
     }
@@ -481,18 +505,94 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
      * @author: lyj
      * @create: 2019/11/26
      **/
-    public static void handleReceivedData(int[] data){
+    public void handleReceivedData(int[] data){
+        boolean flag=false;//当前命令是否找到对应内容
+        MonitorFragment monitor =
+                (MonitorFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
+        if(data.length==5){
+            if(data[0]==0x68&&data[1]==0x38&&data[3]==0x0D&&data[4]==0x0A){
+                send(BluetoothProtocol.ALERT_START,new byte[]{});
+                alertState=BluetoothProtocol.ALERT_START;
+                monitor.handlerReceivedData(BluetoothProtocol.ALERT_START,data);
+            }
+        }
+        if(alertState==BluetoothProtocol.ALERT_CLOSE){
+            int[] aim_alert_close_ok={0x68,0x31,0x0D,0x0A};
+            if(Arrays.equals(aim_alert_close_ok,data)){
+                alertState=BluetoothProtocol.ALERT_CLOSE_OK;
+                monitor.handlerReceivedData(alertState,new int[]{});
+                return;
+            }
+            int[] aim_alert_close_failed={0x68,0x30,0x0D,0x0A};
+            if(Arrays.equals(aim_alert_close_failed,data)){
+                alertState=BluetoothProtocol.ALERT_CLOSE_FAILED;
+                monitor.handlerReceivedData(alertState,new int[]{});
+                return;
+            }
+        }
         switch (receivedState){
             case BluetoothProtocol.SHAKE_HANDS:
-                int[] aimData1={0x68,0x32,0x0D,0x0A};
-                if(Arrays.equals(aimData1,data)){
-                    Log.i(TAG, "握手成功" );
+                int[] aim_shake_hands_ok={0x68,0x32,0x0D,0x0A};
+                if(Arrays.equals(aim_shake_hands_ok,data)){
+                    receivedState=BluetoothProtocol.SHAKE_HANDS_OK;
+                    flag=true;
                 }
-                int[] aimData2={0x68,0x30,0x0D,0x0A};
-                if(Arrays.equals(aimData2,data)){
-                    Log.i(TAG, "握手失败" );
+                else {
+                    int[] aim_shake_hands_failed={0x68,0x30,0x0D,0x0A};
+                    if(Arrays.equals(aim_shake_hands_failed,data)){
+                        receivedState=BluetoothProtocol.SHAKE_HANDS_FAILED;
+                        flag=true;
+                    }
+                }
+                if(flag){
+                    monitor.handlerReceivedData(receivedState,new int[]{});
+                    return;
+                }
+                break;
+            case BluetoothProtocol.START_MEASURE:
+                int[] aim_start_measure_ok={0x68,0x31,0x0D,0x0A};
+                if(Arrays.equals(aim_start_measure_ok,data)){
+                    receivedState=BluetoothProtocol.START_MEASURE_OK;
+                    flag=true;
+                }
+                else{
+                    int[] aim_start_measure_failed={0x68,0x30,0x0D,0x0A};
+                    if(Arrays.equals(aim_start_measure_failed,data)){
+                        receivedState=BluetoothProtocol.START_MEASURE_FAILED;
+                        flag=true;
+                    }
+                }
+                if(flag){
+                    monitor.handlerReceivedData(receivedState,new int[]{});
+                    return;
+                }
+                break;
+            case BluetoothProtocol.GET_DATA:
+                if(data.length==20){
+                    flag=true;
+                    monitor.handlerReceivedData(receivedState,data);
+                    return;
+                }
+                break;
+            case BluetoothProtocol.STOP_MEASURE:
+                int[] aim_stop_measure_ok={0x68,0x31,0x0D,0x0A};
+                if(Arrays.equals(aim_stop_measure_ok,data)){
+                    receivedState=BluetoothProtocol.STOP_MEASURE_OK;
+                    flag=true;
+                }
+                else {
+                    int[] aim_stop_measure_failed={0x68,0x30,0x0D,0x0A};
+                    if(Arrays.equals(aim_stop_measure_failed,data)){
+                        receivedState=BluetoothProtocol.STOP_MEASURE_FAILED;
+                        flag=true;
+                    }
+                }
+                if(flag){
+                    monitor.handlerReceivedData(receivedState,new int[]{});
+                    return;
                 }
                 break;
         }
+        Log.i(TAG, "我出来啦！！！！" );
     }
 }

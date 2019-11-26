@@ -1,11 +1,17 @@
 package com.example.detectradiativeresource.monitor;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Color;
 import android.location.LocationListener;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Vibrator;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,6 +21,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.mapapi.map.TextOptions;
 import com.example.detectradiativeresource.MainActivity;
 import com.example.detectradiativeresource.R;
 
@@ -53,9 +60,14 @@ public class MonitorFragment extends Fragment{
     private static final String TAG = "TraceFragment";
     private Timer timer = null;
     private TimerTask task = null;
-    private TextView valView;
+    private TextView r_valView;
     private Button start;
     private Button cal;
+    private Button btn_alert;
+    private Button btn_spectrum;
+    private Vibrator vibrator;
+    private MediaPlayer mMediaPlayer;
+    private Overlay mAlertOverlay;
 
     public double longitude=0.0;
     public double latitude=0.0;
@@ -77,6 +89,8 @@ public class MonitorFragment extends Fragment{
     LocationService locationService;
     LatLng lastPnt = null;
     private View rootView;
+
+    private int sendFlag;//表示目前所处状态，1是连接中，2是已经连接，3是断开。
 
     public MonitorFragment(){
 
@@ -251,23 +265,29 @@ public class MonitorFragment extends Fragment{
      **/
     private void initDetect(View view){
         ColorStatus = 0;
-        valView=view.findViewById(R.id.get_values);
+        r_valView=view.findViewById(R.id.id_r_val);
         cal=view.findViewById(R.id.calculate);
         start = (Button) view.findViewById(R.id.start);
+        btn_alert=view.findViewById(R.id.alert_close);
+        btn_spectrum=view.findViewById(R.id.get_spectrum);
         start.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 try {
                     if(isStop) {
-                        MainActivity.connectedState=1;
-                        startTimer();
-                        //start.setText("停止");
+                        if(MainActivity.receivedState==BluetoothProtocol.START_MEASURE_OK){
+                            MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
+                            Log.i(TAG, "onClick:------------------ START_MEASURE");
+                        }
+                        else{
+                            MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
+                            Log.i(TAG, "onClick:------------------ SHAKE_HANDS");
+                        }
                     }else{
-                        MainActivity.connectedState=4;
-                        startTimer();
+                        stopTimer();
+                        MainActivity.send(BluetoothProtocol.STOP_MEASURE,new byte[]{});
                         //stopTimer();
                         //start.setText("开始");
                     }
-                    //isStop = !isStop;
 
                 }catch (Exception e) {
                     Log.i(TAG, "onClick: " + e.toString());
@@ -285,10 +305,67 @@ public class MonitorFragment extends Fragment{
                 Toast.makeText(getActivity().getApplicationContext(), "预测坐标为"+ans[0]+":"+ans[1], Toast.LENGTH_LONG).show();
             }
         });
+        btn_alert.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                if(MainActivity.alertState==BluetoothProtocol.ALERT_START){
+                    stopMusic();
+                    stopViberate();
+                    mAlertOverlay.remove();
+                    MainActivity.send(BluetoothProtocol.ALERT_CLOSE,new byte[]{});
+                }
+            }
+        });
         setTestMsg();
         initHistoryPoint();
     }
 
+    private void startMusic(){
+        try {
+            Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            mMediaPlayer = new MediaPlayer();
+            mMediaPlayer.setDataSource(getContext(), alert);
+            //final AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_RING);
+            mMediaPlayer.setLooping(true);
+            mMediaPlayer.prepare();
+            mMediaPlayer.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void stopMusic(){
+        try {
+            if(this.mMediaPlayer != null) {
+                this.mMediaPlayer.stop();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 开启震动
+     */
+    private void startVibrate() {
+        if (vibrator == null) {
+            //获取震动服务
+            vibrator = (Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+        }
+        //震动模式隔1秒震动1.4秒
+        long[] pattern = { 1000, 1400 };
+        //震动重复，从数组的0开始（-1表示不重复）
+        vibrator.vibrate(pattern, 0);
+    }
+
+    /**
+     * 停止震动
+     */
+    private void stopViberate() {
+        if (vibrator != null) {
+            vibrator.cancel();
+        }
+    }
     /**
      * @description: 启动计时器，发送数据
      * @author: lyj
@@ -298,36 +375,18 @@ public class MonitorFragment extends Fragment{
         if(timer == null) {
             timer = new Timer();
         }
-        switch (MainActivity.connectedState){
-            case 1:
-                Message message1 = new Message();
-                message1.what = 1;
-                handler.sendMessage(message1);
-                break;
-            case 2:
-                Message message2 = new Message();
-                message2.what = 2;
-                handler.sendMessage(message2);
-                break;
-            case 3:
-                task=null;
-                task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 需要做的事:发送消息
-                        Message message = new Message();
-                        message.what = 3;
-                        handler.sendMessage(message);
-                    }
-                };
-                timer.schedule(task, 0,2000);
-                break;
-            case 4:
-                Message message4 = new Message();
-                message4.what = 4;
-                handler.sendMessage(message4);
-                break;
-        }
+        task=null;
+        task = new TimerTask() {
+            @Override
+            public void run() {
+                // 需要做的事:发送消息
+                Message message = new Message();
+                message.what = 1;
+                handler.sendMessage(message);
+            }
+        };
+        timer.schedule(task, 0,2000);
+        Log.d(TAG, "---------start timer-----------");
     }
 
     /**
@@ -356,43 +415,127 @@ public class MonitorFragment extends Fragment{
         public void handleMessage(Message msg) {
             switch (msg.what){
                 case 1:
-                    MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
-                    break;
-                case 2:
-                    byte[] data2={0x3A,0x31,0x0D,0x0A};
-                    //MainActivity.bt.send(data2,true);
-                    MainActivity.mBluetoothLeService.writeData(data2);
-                    Log.i(TAG, "发送的数据-2！！！！！！: " );
-                    break;
-                case 3:
-                    byte[] data3={0x3A,0x35,0x0D,0x0A};
-                    //MainActivity.bt.send(data3,true);
-                    MainActivity.mBluetoothLeService.writeData(data3);
-                    Log.i(TAG, "发送的数据-3！！！！！！: " );
-                    break;
-                case 4:
-                    byte[] data4={0x3A,0x32,0x0D,0x0A};
-                    //MainActivity.bt.send(data4,true);
-                    MainActivity.mBluetoothLeService.writeData(data4);
-                    Log.i(TAG, "发送的数据-4！！！！！！: " );
+                    MainActivity.send(BluetoothProtocol.GET_DATA,new byte[]{});
                     break;
             }
             super.handleMessage(msg);
         }
     };
-    public void handlerReceivedData(byte[] data){
-        for(byte d:data){
-            Log.d(TAG, "收到的数据！！！！！！！！！" + d);
+
+    /**
+     * @description: 处理接受数据
+     * @author: lyj
+     * @create: 2019/11/26
+     **/
+    public void handlerReceivedData(String Type,int[] data){
+        switch (Type){
+            case BluetoothProtocol.SHAKE_HANDS_OK:
+                MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
+                break;
+            case BluetoothProtocol.SHAKE_HANDS_FAILED:
+                Toast.makeText(getActivity().getApplicationContext(), "握手失败", Toast.LENGTH_LONG).show();
+                break;
+            case BluetoothProtocol.START_MEASURE_OK:
+                start.setText("停止");
+                isStop = !isStop;
+                startTimer();
+                break;
+            case BluetoothProtocol.START_MEASURE_FAILED:
+                Toast.makeText(getActivity().getApplicationContext(), "启动测量失败", Toast.LENGTH_LONG).show();
+                break;
+            case BluetoothProtocol.GET_DATA:
+                UpdateUI(data);
+                break;
+            case BluetoothProtocol.STOP_MEASURE_OK:
+                MainActivity.receivedState=BluetoothProtocol.START_MEASURE_OK;
+                myStop();
+                break;
+            case BluetoothProtocol.STOP_MEASURE_FAILED:
+                Toast.makeText(getActivity().getApplicationContext(), "停止测量失败", Toast.LENGTH_LONG).show();
+                startTimer();
+                break;
+            case BluetoothProtocol.ALERT_START:
+                setAlert(data[2]);
+                break;
+            case BluetoothProtocol.ALERT_CLOSE_OK:
+                Toast.makeText(getActivity().getApplicationContext(), "关闭报警成功", Toast.LENGTH_LONG).show();
+                MainActivity.alertState=BluetoothProtocol.NO_STATE;
+                break;
+            case BluetoothProtocol.ALERT_CLOSE_FAILED:
+                Toast.makeText(getActivity().getApplicationContext(), "关闭报警失败，请重新关闭", Toast.LENGTH_LONG).show();
+                MainActivity.alertState=BluetoothProtocol.ALERT_START;
+                break;
         }
+
     }
 
+    private void setAlert(int type) {
+        startMusic();
+        startVibrate();
+        String text="";
+        switch (type){
+            case 0:
+                text="NaI高本底报警!!!";
+                break;
+            case 1:
+                text="GM高本底报警!!!";
+                break;
+            case 2:
+                text="中子高本底报警!!!";
+                break;
+            case 3:
+                text="NaI低本底报警!!!";
+                break;
+            case 4:
+                text="GM低本底报警!!!";
+                break;
+            case 5:
+                text="中子低本底报警!!!";
+                break;
+        }
+        LatLng llText = new LatLng(MainActivity.latitude, MainActivity.longitude);
+        OverlayOptions mTextOptions = new TextOptions()
+                .text(text) //文字内容
+                .bgColor(0xAAFFFF00) //背景色
+                .fontSize(48) //字号
+                .fontColor(0xFFFF00FF) //文字颜色
+                .rotate(-30) //旋转角度
+                .position(llText);
+        //在地图上显示文字覆盖物
+        mAlertOverlay = mBaiduMap.addOverlay(mTextOptions);
+    }
+
+    /**
+     * @description: 更新页面
+     * @author: lyj
+     * @create: 2019/10/14
+     **/
+    public void UpdateUI(int[] data){
+        String val=String.valueOf(BluetoothProtocol.getVal(data,2,3));
+        r_valView.setText(val);
+    }
+
+    /**
+     * @description: 停止测量时修改的一些状态位
+     * @author: lyj
+     * @create: 2019/10/14
+     **/
+    public void myStop(){
+        start.setText("开始");
+        isStop=true;
+        r_valView.setText("未测试");
+        r_valView.setBackgroundColor(Color.WHITE);
+        stopTimer();
+        DataHelperUtils.dataTotalMsg_IsAlarm_Now=false;
+        DataHelperUtils.updateDataTotalMsgTime();
+    }
 
     /**
      * @description: 处理接受数据
      * @author: lyj
      * @create: 2019/11/12
      **/
-    public void handlerReceivedData(int[] data){
+    public void handlerReceivedData1(int[] data){
         for(int d:data){
             Log.d(TAG, "收到的数据！！！！！！！！！" + d);
         }
@@ -433,7 +576,7 @@ public class MonitorFragment extends Fragment{
                 }
                 break;
             case 3:
-                UpdateUI(data);
+                UpdateUI1(data);
                 break;
             case 4:
                 if(data.length!=2){
@@ -450,16 +593,6 @@ public class MonitorFragment extends Fragment{
                 }
                 break;
         }
-    }
-    public void myStop(){
-        MainActivity.connectedState=0;
-        start.setText("开始");
-        isStop=true;
-        valView.setText("未测试");
-        valView.setBackgroundColor(Color.WHITE);
-        stopTimer();
-        DataHelperUtils.dataTotalMsg_IsAlarm_Now=false;
-        DataHelperUtils.updateDataTotalMsgTime();
     }
     /**
      * @description:获取辐射值
@@ -480,7 +613,7 @@ public class MonitorFragment extends Fragment{
      * @author: lyj
      * @create: 2019/10/14
      **/
-    private void UpdateUI(int[] data) {
+    private void UpdateUI1(int[] data) {
         for(int d:data){
             Log.i(TAG, "计算的数据内容是！！！！！！: " + d);
         }
@@ -488,25 +621,25 @@ public class MonitorFragment extends Fragment{
         measureVal=String.valueOf(val);
         if(val>MainActivity.errorVal){
             ColorStatus = 4;
-            valView.setBackgroundColor(Color.YELLOW);
+            r_valView.setBackgroundColor(Color.YELLOW);
         }
         else if(val>MainActivity.seriousVal){
             ColorStatus = 3;
-            valView.setBackgroundColor(Color.MAGENTA);
+            r_valView.setBackgroundColor(Color.MAGENTA);
             DataHelperUtils.saveLogMsg("报警","报警时间");
         }
         else if(val>MainActivity.alarmVal){
             ColorStatus = 2;
-            valView.setBackgroundColor(Color.RED);
+            r_valView.setBackgroundColor(Color.RED);
             DataHelperUtils.saveLogMsg("报警","警告时间");
         }
         else{
             ColorStatus = 1;
-            valView.setBackgroundColor(Color.GREEN);
+            r_valView.setBackgroundColor(Color.GREEN);
         }
         DataHelperUtils.saveDataMsg(measureVal,longitude,latitude,0);
         DataHelperUtils.updateDataTotalMsgIsAlarm();
-        valView.setText(measureVal);
+        r_valView.setText(measureVal);
     }
 
     /**
