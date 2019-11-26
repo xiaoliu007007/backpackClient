@@ -12,6 +12,40 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="系统设置"
+                android:gravity="center"
+                android:textSize="23sp"/>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="15dp">
+
+            <TextView
+                android:id="@+id/alert_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="5dp"
+                android:text="报警时间:"
+                android:textSize="15sp"/>
+
+            <EditText
+                android:id="@+id/alert_val"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="94dp"
+                android:layout_alignLeft="@+id/alert_view"
+                android:background="@null"
+                android:hint="50"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:textSize="15sp"/>
+            </RelativeLayout>
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -35,95 +69,202 @@
                 android:layout_marginLeft="94dp"
                 android:layout_alignLeft="@+id/collect_view"
                 android:background="@null"
-                android:hint="5"
+                android:hint="50"
                 android:maxLines="1"
                 android:singleLine="true"
                 android:textSize="15sp"/>
             </RelativeLayout>
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:padding="15dp">
 
                 <TextView
-                    android:id="@+id/threshold_view"
+                    android:id="@+id/collect_force_view"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentLeft="true"
                     android:layout_centerVertical="true"
                     android:layout_marginLeft="5dp"
-                    android:text="阈值:"
+                    android:text="强制本底采集时间:"
                     android:textSize="15sp"/>
 
                 <EditText
-                    android:id="@+id/threshold_val"
+                    android:id="@+id/collect_force_time"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:layout_marginLeft="40dp"
-                    android:layout_alignLeft="@+id/threshold_view"
+                    android:layout_marginLeft="130dp"
+                    android:layout_alignLeft="@+id/collect_force_view"
+                    android:background="@null"
+                    android:hint="50"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:textSize="15sp"/>
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="15dp">
+
+                <TextView
+                    android:id="@+id/alert_flag_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="5dp"
+                    android:text="声光报警:"
+                    android:textSize="15sp"/>
+                <RadioGroup
+                    android:id="@+id/alert_flag_rg"
+                    android:layout_marginLeft="80dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" >
+
+                <RadioButton
+                    android:id="@+id/alert_flag_open"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="开" />
+
+                <RadioButton
+                    android:id="@+id/alert_flag_close"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="关" />
+                </RadioGroup>
+
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="15dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="5dp"
+                    android:text="测量单位:"
+                    android:textSize="15sp"/>
+                <RadioGroup
+                    android:id="@+id/collect_type"
+                    android:layout_marginLeft="80dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" >
+
+                    <RadioButton
+                        android:id="@+id/collect_shu"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="计数率" />
+
+                    <RadioButton
+                        android:id="@+id/collect_liang"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="计量率" />
+                </RadioGroup>
+
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="探测器设置"
+                android:gravity="center"
+                android:textSize="23sp"/>
+
+            <RadioGroup
+                android:id="@+id/threshold_type"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/threshold_hl"
+                android:layout_marginLeft="120dp"
+                android:orientation="horizontal" >
+
+                <RadioButton
+                    android:id="@+id/threshold_nai"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="NaI" />
+
+                <RadioButton
+                    android:id="@+id/threshold_gm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="GM" />
+                <RadioButton
+                    android:id="@+id/threshold_zz"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="中子" />
+            </RadioGroup>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="15dp">
+
+                <TextView
+                    android:id="@+id/threshold_high_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="5dp"
+                    android:text="高本底阈值:"
+                    android:textSize="15sp"/>
+
+                <EditText
+                    android:id="@+id/threshold_high_val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="100dp"
+                    android:layout_alignLeft="@+id/threshold_high_view"
                     android:background="@null"
                     android:hint="0"
                     android:maxLines="1"
                     android:singleLine="true"
                     android:textSize="15sp"/>
+
+                <TextView
+                    android:id="@+id/threshold_low_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="140dp"
+                    android:text="低本底阈值:"
+                    android:textSize="15sp"/>
+
+                <EditText
+                    android:id="@+id/threshold_low_val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="100dp"
+                    android:layout_alignLeft="@+id/threshold_low_view"
+                    android:background="@null"
+                    android:hint="0"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:textSize="15sp"/>
+
+
+            </RelativeLayout>
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/threshold_val"
-                android:layout_marginLeft="40dp"
-                android:orientation="vertical">
-                <RadioGroup
-                    android:id="@+id/threshold_hl"
-                    android:layout_marginLeft="25dp"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" >
-
-                    <RadioButton
-                        android:id="@+id/threshold_low"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        android:text="低本底" />
-
-                    <RadioButton
-                        android:id="@+id/threshold_high"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="高本低" />
-                </RadioGroup>
-                <RadioGroup
-                    android:id="@+id/threshold_type"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@+id/threshold_hl"
-                    android:layout_marginLeft="25dp"
-                    android:orientation="horizontal" >
-
-                    <RadioButton
-                        android:id="@+id/threshold_nai"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        android:text="NaI" />
-
-                    <RadioButton
-                        android:id="@+id/threshold_gm"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="GM" />
-                    <RadioButton
-                        android:id="@+id/threshold_zz"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="中子" />
-                </RadioGroup>
-            </RelativeLayout>
-
-            </RelativeLayout>
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:padding="15dp">
                 <TextView
                     android:id="@+id/NaI_view"
                     android:layout_width="wrap_content"
@@ -133,23 +274,12 @@
                     android:layout_marginLeft="5dp"
                     android:text="NaI修正系数"
                     android:textSize="15sp"/>
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/NaI_view"
-                android:layout_marginLeft="100dp"
-                android:orientation="vertical">
-                <RelativeLayout
-                    android:id="@+id/NaI_view_layout"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
                     <TextView
                         android:id="@+id/NaI_view_a"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentLeft="true"
-                        android:layout_marginLeft="10dp"
+                        android:layout_marginLeft="100dp"
                         android:layout_centerVertical="true"
                         android:text="a:"
                         android:textSize="15sp"/>
@@ -172,7 +302,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentLeft="true"
                         android:layout_centerVertical="true"
-                        android:layout_marginLeft="70dp"
+                        android:layout_marginLeft="150dp"
                         android:layout_alignLeft="@+id/NaI_view_a"
                         android:text="b:"
                         android:textSize="15sp"/>
@@ -196,7 +326,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentLeft="true"
                         android:layout_centerVertical="true"
-                        android:layout_marginLeft="130dp"
+                        android:layout_marginLeft="200dp"
                         android:layout_alignLeft="@+id/NaI_view_b"
                         android:text="c:"
                         android:textSize="15sp"/>
@@ -219,7 +349,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentLeft="true"
                         android:layout_centerVertical="true"
-                        android:layout_marginLeft="190dp"
+                        android:layout_marginLeft="250dp"
                         android:layout_alignLeft="@+id/NaI_view_c"
                         android:text="d:"
                         android:textSize="15sp"/>
@@ -236,34 +366,34 @@
                         android:maxLines="1"
                         android:singleLine="true"
                         android:textSize="15sp"/>
-                </RelativeLayout>
-                <RadioGroup
-                    android:layout_below="@+id/NaI_view_layout"
-                    android:id="@+id/Nai_type"
-                    android:layout_marginLeft="30dp"
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="15dp">
+
+                <TextView
+                    android:id="@+id/alert_threshold_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="5dp"
+                    android:text="报警阈值:"
+                    android:textSize="15sp"/>
+
+                <EditText
+                    android:id="@+id/alert_threshold_val"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal" >
-
-                    <RadioButton
-                        android:id="@+id/Nai_type_nai"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        android:text="NaI" />
-
-                    <RadioButton
-                        android:id="@+id/Nai_type_gm"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="GM" />
-                    <RadioButton
-                        android:id="@+id/Nai_type_zz"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="中子" />
-                </RadioGroup>
-            </RelativeLayout>
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="130dp"
+                    android:layout_alignLeft="@+id/alert_threshold_view"
+                    android:background="@null"
+                    android:hint="50"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:textSize="15sp"/>
             </RelativeLayout>
             <LinearLayout
                 android:id="@+id/id_bottom_tags"
@@ -274,6 +404,12 @@
                 android:layout_gravity="center"
                 android:background="@drawable/bt_tag_bg"
                 android:orientation="horizontal">
+                <Button
+                    android:id="@+id/button_setting_read"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="读取" />
                 <Button
                     android:id="@+id/button_setting"
                     android:layout_width="wrap_content"

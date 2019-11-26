@@ -46,9 +46,6 @@
             android:value="0YKjERGUvcQfEIELN6vrU6LBKZ2hEjkB" />
         <activity android:name=".monitor.trace.OfflineMap" />
 
-        <activity
-            android:name="com.example.detectradiativeresource.bluetooth.library.DeviceList" />
-
         <meta-data android:name="DATABASE" android:value="sugar_example.db"/>
         <meta-data android:name="DOMAIN_PACKAGE_NAME" android:value="com.example.detectradiativeresource.dao"/>
 

@@ -55,7 +55,7 @@ public class DeviceScanActivity extends ListActivity {
 
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 20000;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -157,9 +157,6 @@ public class DeviceScanActivity extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
         if (device == null) return;
-        Toast.makeText(getApplicationContext()
-                , "连接到" + device.getName() + "\n" + device.getAddress()
-                , Toast.LENGTH_SHORT).show();
         /*final Intent intent = new Intent(this, BleSppActivity.class);
         intent.putExtra(BleSppActivity.EXTRAS_DEVICE_NAME, device.getName());
         intent.putExtra(BleSppActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());

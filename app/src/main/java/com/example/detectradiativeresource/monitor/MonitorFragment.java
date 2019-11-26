@@ -35,9 +35,9 @@ import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.DistanceUtil;
 import com.example.detectradiativeresource.Test.MsgTest;
-import com.example.detectradiativeresource.bluetooth.library.BluetoothSPP;
 import com.example.detectradiativeresource.dao.DataMsg;
 import com.example.detectradiativeresource.monitor.trace.LocationService;
+import com.example.detectradiativeresource.utils.BluetoothProtocol;
 import com.example.detectradiativeresource.utils.DBScanUtils;
 import com.example.detectradiativeresource.utils.DataHelperUtils;
 
@@ -274,11 +274,6 @@ public class MonitorFragment extends Fragment{
                 }
             }
         });
-        MainActivity.bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
-            public void onDataReceived(int[] data, String message) {
-                handlerReceivedData(data);
-            }
-        });
         /**
          * @description: DBSCAN测试按钮
          * @author: lyj
@@ -361,10 +356,7 @@ public class MonitorFragment extends Fragment{
         public void handleMessage(Message msg) {
             switch (msg.what){
                 case 1:
-                    byte[] data1={0x3A,0x30,0x0D,0x0A};
-                    //MainActivity.bt.send(data1,true);
-                    MainActivity.mBluetoothLeService.writeData(data1);
-                    Log.i(TAG, "发送的数据-1！！！！！！: " );
+                    MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
                     break;
                 case 2:
                     byte[] data2={0x3A,0x31,0x0D,0x0A};
