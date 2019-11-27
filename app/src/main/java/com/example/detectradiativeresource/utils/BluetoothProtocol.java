@@ -18,6 +18,28 @@ public class BluetoothProtocol {
     public static final String ALERT_CLOSE_OK="alert close ok";//关闭报警成功
     public static final String ALERT_CLOSE_FAILED="alert close failed";//关闭报警失败
 
+    public static final String SETTING_THRESHOLD_LH="setting threshold low high";//高低本底阈值命令
+    public static final String SETTING_THRESHOLD_LH_OK="setting threshold low high ok";//高低本底阈值成功
+    public static final String SETTING_THRESHOLD_LH_FAILED="setting threshold low high failed";//高低本底阈值失败
+    public static final String SETTING_AMEND="setting amend";//NaI修正命令
+    public static final String SETTING_AMEND_OK="setting amend ok";//NaI修正成功
+    public static final String SETTING_AMEND_FAILED="setting amend failed";//NaI修正失败
+    public static final String SETTING_COLLECT_TIME="setting collect time";//能谱采集时间设定
+    public static final String SETTING_COLLECT_TIME_OK="setting collect time ok";//能谱采集时间成功
+    public static final String SETTING_COLLECT_TIME_FAILED="setting collect time failed";//能谱采集时间失败
+    public static final String SETTING_COLLECT_BG_TIME="setting collect background time";//强制采集本底命令
+    public static final String SETTING_COLLECT_BG_TIME_OK="setting collect background time ok";//强制采集本底成功
+    public static final String SETTING_COLLECT_BG_TIME_FAILED="setting collect background time failed";//强制采集本底失败
+    public static final String SETTING_COLLECT_BG_TIME_CONTINUE="setting collect background time continue";//强制采集本底等待第二段
+    public static final String SETTING_THRESHOLD_ALERT="setting threshold alert";//报警阈值命令
+    public static final String SETTING_THRESHOLD_ALERT_OK="setting threshold alert";//报警阈值成功
+    public static final String SETTING_THRESHOLD_ALERT_FAILED="setting threshold alert";//报警阈值失败
+
+    public static final String GET_SPECTRUM="get spectrum";//获取能谱命令
+    public static final String GET_SPECTRUM_OK="get spectrum ok";//获取能谱成功
+    public static final String GET_SPECTRUM_FAILED="get spectrum failed";//获取能谱失败
+
+
 
     /**
      * @description:根据协议高低字节获取数据

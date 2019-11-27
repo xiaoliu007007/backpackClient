@@ -10,7 +10,9 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import com.example.detectradiativeresource.MainActivity;
 import com.example.detectradiativeresource.R;
+import com.example.detectradiativeresource.utils.BluetoothProtocol;
 import com.example.detectradiativeresource.utils.DataHelperUtils;
 
 public class SettingFragment extends Fragment{
@@ -30,7 +32,16 @@ public class SettingFragment extends Fragment{
     private int NaIDVal;
     private int thresholdHigh;//高本底阈值
     private int thresholdLow;//低本底阈值
-    private int thresholdAlert;//报警阈值
+    private int thresholdAlert_1;//报警阈值
+    private int thresholdAlert_2;
+    private int thresholdAlert_3;
+    private int thresholdAlert_4;
+    private int thresholdAlert_5;
+    private boolean thresholdHLFlag=false;//高低本底阈值标志
+    private boolean amendFlag=false;//NaI修正标志
+    private boolean collectTimeFlag=false;//采集时间标志
+    private boolean collectBGFlag=false;//强制采集本底标志
+    private boolean thresholdAlertFlag=false;//报警阈值标志
 
     public SettingFragment(){}
     public static SettingFragment getNewInstance(){
@@ -66,7 +77,11 @@ public class SettingFragment extends Fragment{
         final EditText NaI_b =(EditText) view.findViewById (R.id.NaI_val_b);
         final EditText NaI_c =(EditText) view.findViewById (R.id.NaI_val_c);
         final EditText NaI_d =(EditText) view.findViewById (R.id.NaI_val_d);
-        final EditText alert_threshold_val =(EditText) view.findViewById (R.id.alert_threshold_val);
+        final EditText alert_threshold_val_1 =(EditText) view.findViewById (R.id.alert_threshold_val_1);
+        final EditText alert_threshold_val_2 =(EditText) view.findViewById (R.id.alert_threshold_val_2);
+        final EditText alert_threshold_val_3 =(EditText) view.findViewById (R.id.alert_threshold_val_3);
+        final EditText alert_threshold_val_4 =(EditText) view.findViewById (R.id.alert_threshold_val_4);
+        final EditText alert_threshold_val_5 =(EditText) view.findViewById (R.id.alert_threshold_val_5);
         final RadioGroup alert_flag_rg=(RadioGroup)view.findViewById(R.id.alert_flag_rg);
         final RadioGroup collect_type=(RadioGroup)view.findViewById(R.id.collect_type);
         final RadioGroup thresholdTyperg=(RadioGroup)view.findViewById(R.id.threshold_type);
@@ -119,11 +134,12 @@ public class SettingFragment extends Fragment{
             public void onClick(View view) {
                 String ans="";
                 if(alert.getText().toString().equals("")){
-                    ans+="没有设置报警时间";
+                    //ans+="没有设置报警时间";
                 }
                 else{
                     alertVal=Integer.parseInt(alert.getText().toString());
-                    ans+="报警时间设置为"+alertVal;
+                    collectTimeFlag=true;
+                    //ans+="报警时间设置为"+alertVal;
                 }
                 if(time.getText().toString().equals("")){
                     ans+="没有设置能谱采集时间";
@@ -164,16 +180,77 @@ public class SettingFragment extends Fragment{
                     ans+="C："+NaICVal;
                     ans+="D："+NaIDVal;
                 }
-                if(alert_threshold_val.getText().toString().equals("")){
-                    ans+="没有设置报警时间";
+                if(alert_threshold_val_1.getText().toString().equals("")||alert_threshold_val_2.getText().toString().equals("")
+                ||alert_threshold_val_3.getText().toString().equals("")||alert_threshold_val_4.getText().toString().equals("")||alert_threshold_val_5.getText().toString().equals("")){
+                    ans+="没有设置报警阈值";
                 }
                 else{
-                    thresholdAlert=Integer.parseInt(alert_threshold_val.getText().toString());
-                    ans+="报警时间设置为"+thresholdAlert;
+                    thresholdAlert_1=Integer.parseInt(alert_threshold_val_1.getText().toString());
+                    thresholdAlert_2=Integer.parseInt(alert_threshold_val_2.getText().toString());
+                    thresholdAlert_3=Integer.parseInt(alert_threshold_val_3.getText().toString());
+                    thresholdAlert_4=Integer.parseInt(alert_threshold_val_4.getText().toString());
+                    thresholdAlert_5=Integer.parseInt(alert_threshold_val_5.getText().toString());
+                    ans+="报警阈值一设置为"+thresholdAlert_1;
+                    ans+="报警阈值二设置为"+thresholdAlert_2;
+                    ans+="报警阈值三设置为"+thresholdAlert_3;
+                    ans+="报警阈值四设置为"+thresholdAlert_4;
+                    ans+="报警阈值五设置为"+thresholdAlert_5;
                 }
-                Toast.makeText(getActivity().getApplicationContext(), ans, Toast.LENGTH_LONG).show();
+                //Toast.makeText(getActivity().getApplicationContext(), ans, Toast.LENGTH_LONG).show();
+                if(MainActivity.receivedState== BluetoothProtocol.SHAKE_HANDS_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE){
+                    MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
+                }
+                else{
+                    sendSetting();
+                }
             }
         });
+    }
+    /**
+     * @description: 发送数据
+     * @author: lyj
+     * @create: 2019/11/27
+     **/
+    private void sendSetting(){
+        if(thresholdHLFlag){
+
+        }
+        else if(amendFlag){
+
+        }
+        else if(collectTimeFlag){
+            MainActivity.send(BluetoothProtocol.SETTING_COLLECT_TIME,new byte[]{(byte) alertVal});
+        }
+        else if(collectBGFlag){
+
+        }
+        else if(thresholdAlertFlag){
+
+        }
+    }
+
+    /**
+     * @description: 处理接受数据
+     * @author: lyj
+     * @create: 2019/11/27
+     **/
+    public void handlerReceivedData(String Type,int[] data){
+        switch (Type) {
+            case BluetoothProtocol.SHAKE_HANDS_OK:
+                sendSetting();
+                break;
+            case BluetoothProtocol.SHAKE_HANDS_FAILED:
+                Toast.makeText(getActivity().getApplicationContext(), "握手失败,无法设定", Toast.LENGTH_LONG).show();
+                break;
+            case BluetoothProtocol.SETTING_COLLECT_TIME_OK:
+                Toast.makeText(getActivity().getApplicationContext(), "设置采集时间成功", Toast.LENGTH_LONG).show();
+                collectTimeFlag=false;
+                break;
+            case BluetoothProtocol.SETTING_COLLECT_TIME_FAILED:
+                Toast.makeText(getActivity().getApplicationContext(), "设置采集时间失败，请重新设置", Toast.LENGTH_LONG).show();
+                collectTimeFlag=false;
+                break;
+        }
     }
 }
 

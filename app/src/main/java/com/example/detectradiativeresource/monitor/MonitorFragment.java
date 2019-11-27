@@ -18,6 +18,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -61,6 +63,7 @@ public class MonitorFragment extends Fragment{
     private Timer timer = null;
     private TimerTask task = null;
     private TextView r_valView;
+    private TextView n_valView;
     private Button start;
     private Button cal;
     private Button btn_alert;
@@ -68,6 +71,9 @@ public class MonitorFragment extends Fragment{
     private Vibrator vibrator;
     private MediaPlayer mMediaPlayer;
     private Overlay mAlertOverlay;
+    private ProgressBar progressBar_r;
+    private ProgressBar progressBar_n;
+    private LinearLayout wifiBg;
 
     public double longitude=0.0;
     public double latitude=0.0;
@@ -85,10 +91,13 @@ public class MonitorFragment extends Fragment{
     //private boolean setRegion=false;//是否需要设置区域
     private boolean setGuide=false;//是否找到辐射值最强的方向
     private MsgTest test=new MsgTest();
-    private String measureVal="";
     LocationService locationService;
     LatLng lastPnt = null;
     private View rootView;
+    private boolean isAlert=false;//当前位置是否超过报警值
+    private String measureVal_r;
+    private String measureVal_n;
+    private boolean wifiFlag;//蓝牙是否连接
 
     private int sendFlag;//表示目前所处状态，1是连接中，2是已经连接，3是断开。
 
@@ -266,21 +275,27 @@ public class MonitorFragment extends Fragment{
     private void initDetect(View view){
         ColorStatus = 0;
         r_valView=view.findViewById(R.id.id_r_val);
+        n_valView=view.findViewById(R.id.id_n_val);
         cal=view.findViewById(R.id.calculate);
         start = (Button) view.findViewById(R.id.start);
         btn_alert=view.findViewById(R.id.alert_close);
         btn_spectrum=view.findViewById(R.id.get_spectrum);
+        wifiBg=(LinearLayout)view.findViewById(R.id.wifi_id);
+        progressBar_r = (ProgressBar)view.findViewById(R.id.progress_r);
+        progressBar_r.setProgress(0);
+        progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+        progressBar_n = (ProgressBar)view.findViewById(R.id.progress_n);
+        progressBar_n.setProgress(0);
+        progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
         start.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 try {
                     if(isStop) {
-                        if(MainActivity.receivedState==BluetoothProtocol.START_MEASURE_OK){
-                            MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
-                            Log.i(TAG, "onClick:------------------ START_MEASURE");
+                        if(MainActivity.receivedState==BluetoothProtocol.START_MEASURE_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE){
+                            MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
                         }
                         else{
-                            MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
-                            Log.i(TAG, "onClick:------------------ SHAKE_HANDS");
+                            MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
                         }
                     }else{
                         stopTimer();
@@ -315,8 +330,49 @@ public class MonitorFragment extends Fragment{
                 }
             }
         });
+        btn_spectrum.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                if(MainActivity.receivedState==BluetoothProtocol.NO_STATE||MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS_FAILED){
+                    Toast.makeText(getActivity().getApplicationContext(), "未连接至背包，请点击开始按钮", Toast.LENGTH_LONG).show();
+                }
+                else if(MainActivity.receivedState==BluetoothProtocol.START_MEASURE||MainActivity.receivedState==BluetoothProtocol.START_MEASURE_FAILED){
+                    Toast.makeText(getActivity().getApplicationContext(), "未开启测量，请点击开始按钮", Toast.LENGTH_LONG).show();
+                }
+                else{
+                    MainActivity.send(BluetoothProtocol.GET_SPECTRUM,new byte[]{});
+                }
+            }
+        });
         setTestMsg();
         initHistoryPoint();
+    }
+
+    public void notifyChangeWifi(boolean flag){
+        wifiFlag=flag;
+        timer = new Timer();
+        task = new TimerTask() {
+            @Override
+            public void run() {
+                // 需要做的事:发送消息
+                Message message = new Message();
+                message.what = 2;
+                handler.sendMessage(message);
+            }
+        };
+        timer.schedule(task, 0);
+    }
+
+    public void changeWifi(){
+        if(wifiFlag){
+            if(this.getContext()!=null){
+                wifiBg.setBackground(getResources().getDrawable(R.drawable.wifi_black));
+            }
+        }
+        else{
+            if(this.getContext()!=null){
+                wifiBg.setBackground(getResources().getDrawable(R.drawable.wifi_white));
+            }
+        }
     }
 
     private void startMusic(){
@@ -417,6 +473,9 @@ public class MonitorFragment extends Fragment{
                 case 1:
                     MainActivity.send(BluetoothProtocol.GET_DATA,new byte[]{});
                     break;
+                case 2:
+                    changeWifi();
+                    break;
             }
             super.handleMessage(msg);
         }
@@ -444,6 +503,7 @@ public class MonitorFragment extends Fragment{
                 Toast.makeText(getActivity().getApplicationContext(), "启动测量失败", Toast.LENGTH_LONG).show();
                 break;
             case BluetoothProtocol.GET_DATA:
+                DataHelperUtils.saveDataTotalMsg();
                 UpdateUI(data);
                 break;
             case BluetoothProtocol.STOP_MEASURE_OK:
@@ -465,6 +525,10 @@ public class MonitorFragment extends Fragment{
                 Toast.makeText(getActivity().getApplicationContext(), "关闭报警失败，请重新关闭", Toast.LENGTH_LONG).show();
                 MainActivity.alertState=BluetoothProtocol.ALERT_START;
                 break;
+            /*case BluetoothProtocol.GET_SPECTRUM:
+                MainActivity.getSpectrum=BluetoothProtocol.NO_STATE;
+                handlerSpectrumData(data);
+                break;*/
         }
 
     }
@@ -511,8 +575,54 @@ public class MonitorFragment extends Fragment{
      * @create: 2019/10/14
      **/
     public void UpdateUI(int[] data){
-        String val=String.valueOf(BluetoothProtocol.getVal(data,2,3));
-        r_valView.setText(val);
+        if(MainActivity.valType==0){
+            int r_val=BluetoothProtocol.getVal(data,2,3);
+            int n_val=BluetoothProtocol.getVal(data,10,11);
+            measureVal_r=String.valueOf(r_val);
+            measureVal_n=String.valueOf(n_val);
+            r_valView.setText(measureVal_r);
+            n_valView.setText(measureVal_n);
+            if(r_val>MainActivity.alert_r_jishu){
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                DataHelperUtils.saveLogMsg("报警","警告时间");
+                isAlert=true;
+            }
+            if(n_val>MainActivity.alert_n_jishu){
+                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                DataHelperUtils.saveLogMsg("报警","警告时间");
+                isAlert=true;
+            }
+            progressBar_r.setProgress((int) ((r_val+0.1)/MainActivity.total_r_jishu*100));
+            progressBar_n.setProgress((int) ((n_val+0.1)/MainActivity.total_n_jishu*100));
+            if(isAlert){
+                DataHelperUtils.updateDataTotalMsgIsAlarm();
+            }
+            DataHelperUtils.saveDataMsg(String.valueOf(r_val),longitude,latitude,0,isAlert);
+        }
+        else if(MainActivity.valType==1){
+            int r_val=BluetoothProtocol.getVal(data,4,5);
+            int n_val=BluetoothProtocol.getVal(data,12,13);
+            measureVal_r=String.valueOf(r_val);
+            measureVal_n=String.valueOf(n_val);
+            r_valView.setText(measureVal_r);
+            n_valView.setText(measureVal_n);
+            if(r_val>MainActivity.alert_r_jiliang){
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                DataHelperUtils.saveLogMsg("报警","警告时间");
+                isAlert=true;
+            }
+            if(n_val>MainActivity.alert_n_jiliang){
+                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                DataHelperUtils.saveLogMsg("报警","警告时间");
+                isAlert=true;
+            }
+            progressBar_r.setProgress((int) ((r_val+0.1)/MainActivity.total_r_jiliang*100));
+            progressBar_n.setProgress((int) ((n_val+0.1)/MainActivity.total_n_jiliang*100));
+            if(isAlert){
+                DataHelperUtils.updateDataTotalMsgIsAlarm();
+            }
+            DataHelperUtils.saveDataMsg(String.valueOf(r_val),longitude,latitude,0,isAlert);
+        }
     }
 
     /**
@@ -525,6 +635,12 @@ public class MonitorFragment extends Fragment{
         isStop=true;
         r_valView.setText("未测试");
         r_valView.setBackgroundColor(Color.WHITE);
+        n_valView.setText("未测试");
+        n_valView.setBackgroundColor(Color.WHITE);
+        progressBar_r.setProgress(0);
+        progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+        progressBar_n.setProgress(0);
+        progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
         stopTimer();
         DataHelperUtils.dataTotalMsg_IsAlarm_Now=false;
         DataHelperUtils.updateDataTotalMsgTime();
@@ -576,7 +692,7 @@ public class MonitorFragment extends Fragment{
                 }
                 break;
             case 3:
-                UpdateUI1(data);
+                //UpdateUI1(data);
                 break;
             case 4:
                 if(data.length!=2){
@@ -612,7 +728,7 @@ public class MonitorFragment extends Fragment{
      * @description: 更新页面
      * @author: lyj
      * @create: 2019/10/14
-     **/
+     **//*
     private void UpdateUI1(int[] data) {
         for(int d:data){
             Log.i(TAG, "计算的数据内容是！！！！！！: " + d);
@@ -640,7 +756,7 @@ public class MonitorFragment extends Fragment{
         DataHelperUtils.saveDataMsg(measureVal,longitude,latitude,0);
         DataHelperUtils.updateDataTotalMsgIsAlarm();
         r_valView.setText(measureVal);
-    }
+    }*/
 
     /**
      * @description: 获取当前时间
@@ -661,7 +777,7 @@ public class MonitorFragment extends Fragment{
      * @create: 2019/09/27
      **/
     public void setMarker(){
-        if(measureVal==null||measureVal.length()==0){
+        if(measureVal_r==null||measureVal_r.length()==0){
             //Log.i(TAG, "measureVal---------null");
             return;
         }
@@ -671,12 +787,12 @@ public class MonitorFragment extends Fragment{
         }
         //Log.i(TAG, "find-----------------------------------------------------------------------go");
         Bundle mBundle = new Bundle();
-        mBundle.putString("msg", measureVal);
+        mBundle.putString("msg", measureVal_r);
         LatLng point = new LatLng(latitude, longitude);
         BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_end);
         MarkerOptions option = new MarkerOptions().position(point).icon(bitmap).draggable(true).extraInfo(mBundle).flat(true).alpha(0.5f);
         mBaiduMap.addOverlay(option);
-        DataHelperUtils.saveDataMsg(measureVal,longitude,latitude,1);
+        DataHelperUtils.saveDataMsg(measureVal_r,longitude,latitude,1,isAlert);
         /*DataMsg msg=new DataMsg(getTime(),measureVal,longitude,latitude,1);
         msg.save();*/
     }

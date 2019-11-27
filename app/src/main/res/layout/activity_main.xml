@@ -48,7 +48,7 @@
                 android:drawableTop="@drawable/x_nav_menu_sy"
                 android:gravity="center"
                 android:onClick="switchView"
-                android:text="首页"
+                android:text="巡测"
                 android:textColor="@drawable/x_nav_menu_color"
                 android:textSize="10sp" />
 

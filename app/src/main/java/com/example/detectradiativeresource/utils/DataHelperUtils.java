@@ -72,9 +72,9 @@ public class DataHelperUtils {
      * @author: lyj
      * @create: 2019/09/02
      **/
-    public static void saveDataMsg(String val,double longitude,double latitude,int status){
+    public static void saveDataMsg(String val,double longitude,double latitude,int status,boolean flag){
         if(longitude!=0.0&&latitude!=0.0){
-            String isAlarm=Integer.valueOf(val)> MainActivity.alarmVal?"是":"否";
+            String isAlarm=flag?"是":"否";
             DataMsg msg=new DataMsg(getTime(),val,longitude,latitude,status,isAlarm,dataTotalMsg_Id_Now);
             Log.i("------save id is-----",String.valueOf(dataTotalMsg_Id_Now));
             msg.save();

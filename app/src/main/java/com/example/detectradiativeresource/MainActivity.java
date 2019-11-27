@@ -35,6 +35,7 @@ import com.example.detectradiativeresource.dao.TestMsg;
 import com.example.detectradiativeresource.data.DataTotalFragment;
 import com.example.detectradiativeresource.log.LogDetailFragment;
 import com.example.detectradiativeresource.log.LogFragment;
+import com.example.detectradiativeresource.monitor.LineChartActivity;
 import com.example.detectradiativeresource.monitor.MonitorFragment;
 import com.example.detectradiativeresource.monitor.trace.LocationService;
 import com.example.detectradiativeresource.setting.SettingFragment;
@@ -63,9 +64,16 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     private FrameLayout mFlLifeRoot;
     public static double longitude;
     public static double latitude;
-    public static int alarmVal;
-    public static int seriousVal;
-    public static int errorVal;
+    public static int total_r_jishu;
+    public static int alert_r_jishu;
+    public static int total_r_jiliang;
+    public static int alert_r_jiliang;
+    public static int total_n_jishu;
+    public static int alert_n_jishu;
+    public static int total_n_jiliang;
+    public static int alert_n_jiliang;
+    public static int valType=0;//0表示计数率，1表示计量率
+
     public static double interval;//范围内历史轨迹点的间隔数
     public static double startLatitude;
     public static double startLongitude;
@@ -94,6 +102,8 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     private String address;
     public static String receivedState=BluetoothProtocol.NO_STATE;//等待接受协议的状态;
     public static String alertState=BluetoothProtocol.NO_STATE;//报警状态
+    public static String settingCollectTimeState=BluetoothProtocol.NO_STATE;//设置采集时间状态
+    public static String getSpectrum=BluetoothProtocol.NO_STATE;
     public OnDataListener onDataListener;
     private static final int REQUEST_ENABLE_BT = 1;
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -123,13 +133,16 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     , Toast.LENGTH_SHORT).show();
                 BluetoothListener myListener=(BluetoothListener)bluetoothFragment;
                 myListener.setText("连接成功");
+                changeWifi(true);
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 //mBluetoothLeService.connect(address);
+                receivedState=BluetoothProtocol.NO_STATE;
                 Toast.makeText(getApplicationContext()
                     , "连接断开"
                     , Toast.LENGTH_SHORT).show();
                 BluetoothListener myListener=(BluetoothListener)bluetoothFragment;
                 myListener.setText("连接失败");
+                changeWifi(false);
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 //特征值找到才代表连接成功
             }else if (BluetoothLeService.ACTION_GATT_SERVICES_NO_DISCOVERED.equals(action)){
@@ -142,7 +155,13 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 for(byte d:data){
                     receivedData[i++]= d<0?256 + d:d;
                 }
-                handleReceivedData(receivedData);
+                Fragment currentFragment=getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
+                if( currentFragment!=null&&currentFragment instanceof MonitorFragment){
+                    handleReceivedDataByMonitorFragment(receivedData);
+                }
+                if( currentFragment!=null&&currentFragment instanceof SettingFragment){
+                    handleReceivedDataBySettingFragment(receivedData);
+                }
             }else if (BluetoothLeService.ACTION_WRITE_SUCCESSFUL.equals(action)) {
                /* mSendBytes.setText(sendBytes + " ");
                 if (sendDataLen>0)
@@ -157,6 +176,30 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
 
         }
     };
+
+    private void changeWifi(final boolean flag){
+        new Thread() {
+            @Override
+            public void run() {
+                while (true){
+                    try {
+                        currentThread().sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    Fragment currentFragment=getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
+                    if( currentFragment!=null&&currentFragment instanceof MonitorFragment){
+                        MonitorFragment monitor =
+                                (MonitorFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
+                        monitor.notifyChangeWifi(flag);
+                        Log.e(TAG, "--------------------over----------------------"+flag);
+                        return;
+                    }
+                }
+            }
+        }.start();
+
+    }
     public interface OnDataListener {
         public void onDataChange(byte[] data);
 
@@ -192,9 +235,14 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
             in =getResources().openRawResource(R.raw.config);
             property.load(in);
             maxValue=Integer.valueOf(property.getProperty("maxValue"));
-            alarmVal=Integer.valueOf(property.getProperty("alarmVal"));
-            seriousVal=Integer.valueOf(property.getProperty("seriousVal"));
-            errorVal=Integer.valueOf(property.getProperty("errorVal"));
+            total_r_jishu=Integer.valueOf(property.getProperty("total_r_jishu"));
+            alert_r_jishu=Integer.valueOf(property.getProperty("alert_r_jishu"));
+            total_r_jiliang=Integer.valueOf(property.getProperty("total_r_jiliang"));
+            alert_r_jiliang=Integer.valueOf(property.getProperty("alert_r_jiliang"));
+            total_n_jishu=Integer.valueOf(property.getProperty("total_n_jishu"));
+            alert_n_jishu=Integer.valueOf(property.getProperty("alert_n_jishu"));
+            total_n_jiliang=Integer.valueOf(property.getProperty("total_n_jiliang"));
+            alert_n_jiliang=Integer.valueOf(property.getProperty("alert_n_jiliang"));
             interval=Double.valueOf(property.getProperty("interval"));
             IP=property.getProperty("IP");
         } catch (IOException e) {
@@ -204,6 +252,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 try {
                     in.close();
                 } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -497,15 +546,33 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 alertState=BluetoothProtocol.ALERT_CLOSE;
                 Log.i(TAG, "关闭报警" );
                 break;
+
+            case BluetoothProtocol.SETTING_COLLECT_TIME:
+                byte[] send_collect_time=new byte[5];
+                send_collect_time[0]=0x68;
+                send_collect_time[1]=0x36;
+                send_collect_time[2]=data[0];
+                send_collect_time[3]=0x0D;
+                send_collect_time[4]=0x0A;
+                mBluetoothLeService.writeData(send_collect_time);
+                settingCollectTimeState=BluetoothProtocol.SETTING_COLLECT_TIME;
+                Log.i(TAG, "发送设置采集时间" );
+                break;
+            case BluetoothProtocol.GET_SPECTRUM:
+                byte[] send_get_spectrum={0x68,0x32,0x0D,0x0A};
+                mBluetoothLeService.writeData(send_get_spectrum);
+                getSpectrum=BluetoothProtocol.GET_SPECTRUM;
+                Log.i(TAG, "获取能谱" );
+                break;
         }
     }
 
     /**
-     * @description: 处理收到的数据
+     * @description: MonitorFragment处理收到的数据
      * @author: lyj
      * @create: 2019/11/26
      **/
-    public void handleReceivedData(int[] data){
+    public void handleReceivedDataByMonitorFragment(int[] data){
         boolean flag=false;//当前命令是否找到对应内容
         MonitorFragment monitor =
                 (MonitorFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
@@ -514,6 +581,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 send(BluetoothProtocol.ALERT_START,new byte[]{});
                 alertState=BluetoothProtocol.ALERT_START;
                 monitor.handlerReceivedData(BluetoothProtocol.ALERT_START,data);
+                return;
             }
         }
         if(alertState==BluetoothProtocol.ALERT_CLOSE){
@@ -529,6 +597,11 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 monitor.handlerReceivedData(alertState,new int[]{});
                 return;
             }
+        }
+        if(getSpectrum==BluetoothProtocol.GET_SPECTRUM&&data.length==13){
+            //monitor.handlerReceivedData(getSpectrum,data);
+            jumpToSpectrum(data);
+            return;
         }
         switch (receivedState){
             case BluetoothProtocol.SHAKE_HANDS:
@@ -595,4 +668,68 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
         }
         Log.i(TAG, "我出来啦！！！！" );
     }
+
+    /**
+     * @description: SettingFragment处理收到的数据
+     * @author: lyj
+     * @create: 2019/11/27
+     **/
+    public void handleReceivedDataBySettingFragment(int[] data){
+        boolean flag=false;
+        SettingFragment setting =
+                (SettingFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
+        if(receivedState==BluetoothProtocol.SHAKE_HANDS){
+            int[] aim_shake_hands_ok={0x68,0x32,0x0D,0x0A};
+            if(Arrays.equals(aim_shake_hands_ok,data)){
+                receivedState=BluetoothProtocol.SHAKE_HANDS_OK;
+                flag=true;
+            }
+            else {
+                int[] aim_shake_hands_failed={0x68,0x30,0x0D,0x0A};
+                if(Arrays.equals(aim_shake_hands_failed,data)){
+                    receivedState=BluetoothProtocol.SHAKE_HANDS_FAILED;
+                    flag=true;
+                }
+            }
+            if(flag){
+                setting.handlerReceivedData(receivedState,new int[]{});
+                return;
+            }
+        }
+        else if(settingCollectTimeState==BluetoothProtocol.SETTING_COLLECT_TIME){
+            int[] aim_collect_time_ok={0x68,0x31,0x0D,0x0A};
+            if(Arrays.equals(aim_collect_time_ok,data)){
+                settingCollectTimeState=BluetoothProtocol.SETTING_COLLECT_TIME_OK;
+                flag=true;
+            }
+            else {
+                int[] aim_collect_time_failed={0x68,0x30,0x0D,0x0A};
+                if(Arrays.equals(aim_collect_time_failed,data)){
+                    settingCollectTimeState=BluetoothProtocol.SETTING_COLLECT_TIME_FAILED;
+                    flag=true;
+                }
+            }
+            if(flag){
+                setting.handlerReceivedData(settingCollectTimeState,new int[]{});
+                return;
+            }
+        }
+    }
+
+    /**
+     * @description: 跳转到能谱Activity展示
+     * @author: lyj
+     * @create: 2019/11/27
+     **/
+    private void jumpToSpectrum(int[] data){
+        int[] nums=new int[(data.length-3)/2];
+        for(int i=0;i<nums.length;i++){
+            nums[i]=BluetoothProtocol.getVal(data,2*i+1,2*i+2);
+        }
+        MainActivity.getSpectrum=BluetoothProtocol.NO_STATE;
+        Intent intent=new Intent(MainActivity.this, LineChartActivity.class);
+        intent.putExtra("data",nums);
+        startActivity(intent);
+    }
+
 }

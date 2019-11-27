@@ -370,7 +370,7 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="15dp">
+                android:padding="5dp">
 
                 <TextView
                     android:id="@+id/alert_threshold_view"
@@ -378,19 +378,121 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentLeft="true"
                     android:layout_centerVertical="true"
-                    android:layout_marginLeft="5dp"
+                    android:layout_marginLeft="0dp"
                     android:text="报警阈值:"
                     android:textSize="15sp"/>
 
+                <TextView
+                    android:id="@+id/alert_threshold_view_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="70dp"
+                    android:text="一级:"
+                    android:textSize="15sp"/>
+
                 <EditText
-                    android:id="@+id/alert_threshold_val"
-                    android:layout_width="match_parent"
+                    android:id="@+id/alert_threshold_val_1"
+                    android:layout_width="20dp"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:layout_marginLeft="130dp"
+                    android:layout_marginLeft="105dp"
                     android:layout_alignLeft="@+id/alert_threshold_view"
                     android:background="@null"
-                    android:hint="50"
+                    android:hint=""
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:textSize="15sp"/>
+
+                <TextView
+                    android:id="@+id/alert_threshold_view_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="125dp"
+                    android:text="二级:"
+                    android:textSize="15sp"/>
+
+                <EditText
+                    android:id="@+id/alert_threshold_val_2"
+                    android:layout_width="20dp"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="160dp"
+                    android:layout_alignLeft="@+id/alert_threshold_view"
+                    android:background="@null"
+                    android:hint=""
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:textSize="15sp"/>
+
+                <TextView
+                    android:id="@+id/alert_threshold_view_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="180dp"
+                    android:text="三级:"
+                    android:textSize="15sp"/>
+
+                <EditText
+                    android:id="@+id/alert_threshold_val_3"
+                    android:layout_width="20dp"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="215dp"
+                    android:layout_alignLeft="@+id/alert_threshold_view"
+                    android:background="@null"
+                    android:hint=""
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:textSize="15sp"/>
+
+                <TextView
+                    android:id="@+id/alert_threshold_view_4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="235dp"
+                    android:text="四级:"
+                    android:textSize="15sp"/>
+
+                <EditText
+                    android:id="@+id/alert_threshold_val_4"
+                    android:layout_width="20dp"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="270dp"
+                    android:layout_alignLeft="@+id/alert_threshold_view"
+                    android:background="@null"
+                    android:hint=""
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:textSize="15sp"/>
+
+                <TextView
+                    android:id="@+id/alert_threshold_view_5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="290dp"
+                    android:text="五级:"
+                    android:textSize="15sp"/>
+
+                <EditText
+                    android:id="@+id/alert_threshold_val_5"
+                    android:layout_width="20dp"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="325dp"
+                    android:layout_alignLeft="@+id/alert_threshold_view"
+                    android:background="@null"
+                    android:hint=""
                     android:maxLines="1"
                     android:singleLine="true"
                     android:textSize="15sp"/>

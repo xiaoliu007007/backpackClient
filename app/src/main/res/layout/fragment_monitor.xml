@@ -6,7 +6,7 @@
     <RelativeLayout
         android:id="@+id/id_top_tags"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
+        android:layout_height="20dp"
         android:background="@drawable/bt_tag_bg"
         android:orientation="horizontal">
         <TextView
@@ -15,15 +15,63 @@
             android:layout_height="wrap_content"
             android:layout_weight="4"
             android:gravity="center"
-            android:text="当前辐射值"
+            android:text="r辐射值"
             android:textStyle="bold" />
+        <ProgressBar
+            android:id="@+id/progress_r"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="85dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:layout_alignLeft="@id/id_r_view"
+            android:layout_marginLeft="100dp"
+            android:max="100"
+            android:progress="10"
+            />
         <TextView
             android:id="@+id/id_r_val"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="4"
             android:layout_alignLeft="@id/id_r_view"
+            android:layout_marginLeft="200dp"
+            android:gravity="center"
+            android:text="未预测"
+            android:textStyle="bold" />
+    </RelativeLayout>
+    <RelativeLayout
+        android:id="@+id/id_top_tags_1"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:background="@drawable/bt_tag_bg"
+        android:layout_below="@id/id_top_tags"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/id_n_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:gravity="center"
+            android:text="n辐射值"
+            android:textStyle="bold" />
+        <ProgressBar
+            android:id="@+id/progress_n"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="85dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:layout_alignLeft="@id/id_n_view"
             android:layout_marginLeft="100dp"
+            android:max="100"
+            android:progress="10"
+            />
+        <TextView
+            android:id="@+id/id_n_val"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:layout_alignLeft="@id/id_n_view"
+            android:layout_marginLeft="200dp"
             android:gravity="center"
             android:text="未预测"
             android:textStyle="bold" />
@@ -32,7 +80,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/id_top_tags">
+        android:layout_below="@+id/id_top_tags_1">
 
         <com.baidu.mapapi.map.MapView
             android:id="@+id/bmapView"
@@ -63,7 +111,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_weight="1"
-            android:text="预测" />
+            android:text="巡测" />
 
         <Button
             android:id="@+id/alert_close"
@@ -81,6 +129,13 @@
             android:layout_weight="1"
             android:text="获取能谱" />
 
+        <LinearLayout
+            android:id="@+id/wifi_id"
+            android:layout_width="50dp"
+            android:layout_height="40dp"
+            android:background="@drawable/wifi_white"
+            android:orientation="horizontal">
+            </LinearLayout>
     </LinearLayout>
 
 </RelativeLayout>
