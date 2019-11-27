@@ -598,7 +598,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
-        if(getSpectrum==BluetoothProtocol.GET_SPECTRUM&&data.length==13){
+        if(getSpectrum==BluetoothProtocol.GET_SPECTRUM&&data.length==2051){
             //monitor.handlerReceivedData(getSpectrum,data);
             jumpToSpectrum(data);
             return;

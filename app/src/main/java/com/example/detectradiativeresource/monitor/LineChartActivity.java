@@ -145,9 +145,6 @@ public class LineChartActivity extends AppCompatActivity {
         for(int i=1;i<=data.length;i++){
             ans.add(new Entry(i,data[i-1]));
         }
-        for(int i=6;i<=1024;i++){
-            ans.add(new Entry(i,2*i));
-        }
         return ans;
     }
 }
