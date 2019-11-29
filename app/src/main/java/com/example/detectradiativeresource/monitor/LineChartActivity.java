@@ -37,7 +37,7 @@ public class LineChartActivity extends AppCompatActivity {
         setContentView(R.layout.activity_spectrum);
         Intent intent =getIntent();
         int[] nums=intent.getIntArrayExtra("data");
-        Toast.makeText(getApplicationContext(), "数据是"+nums[1], Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getApplicationContext(), "数据是"+nums[1], Toast.LENGTH_SHORT).show();
 
         LineChart lineChart= (LineChart) findViewById(R.id.lineChart);
         //创建描述信息
@@ -145,6 +145,9 @@ public class LineChartActivity extends AppCompatActivity {
         for(int i=1;i<=data.length;i++){
             ans.add(new Entry(i,data[i-1]));
         }
+        /*for(int i=6;i<1024;i++){
+            ans.add(new Entry(i,i*3));
+        }*/
         return ans;
     }
 }

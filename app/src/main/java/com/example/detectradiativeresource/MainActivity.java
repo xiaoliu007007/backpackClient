@@ -47,6 +47,7 @@ import com.orm.SugarContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -99,11 +100,22 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
 
 
     public static BluetoothLeService mBluetoothLeService;
+    ArrayList<Integer> receivedList=new ArrayList<>();//接受数据的list
+    public static boolean autoFlag=false;//是否自动重连
     private String address;
     public static String receivedState=BluetoothProtocol.NO_STATE;//等待接受协议的状态;
     public static String alertState=BluetoothProtocol.NO_STATE;//报警状态
     public static String settingCollectTimeState=BluetoothProtocol.NO_STATE;//设置采集时间状态
-    public static String getSpectrum=BluetoothProtocol.NO_STATE;
+    public static String settingAmendState=BluetoothProtocol.NO_STATE;//NaI修正状态
+    public static String settingCollectBGState=BluetoothProtocol.NO_STATE;//强制采集本底状态
+    public static String settingThresholdHLState=BluetoothProtocol.NO_STATE;//高低本底阈值状态
+    public static String settingThresholdAlertState=BluetoothProtocol.NO_STATE;//报警阈值设定的状态
+    public static String settingGetDataPart1State=BluetoothProtocol.NO_STATE;//获取第一部分参数内容状态
+    public static String settingGetDataPart2State=BluetoothProtocol.NO_STATE;//获取第二部分参数内容状态
+
+    public static String getSpectrum=BluetoothProtocol.NO_STATE;//能谱获取状态
+
+    public static int collectBGVal;//强制本底采集内容
     public OnDataListener onDataListener;
     private static final int REQUEST_ENABLE_BT = 1;
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -150,11 +162,17 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
             }else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 //displayData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA));
                 byte[] data=intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-                int [] receivedData=new int[data.length];
-                int i=0;
                 for(byte d:data){
-                    receivedData[i++]= d<0?256 + d:d;
+                    receivedList.add(d<0?256 + d:d);
                 }
+                if(data[data.length-2]!=0x0D||data[data.length-1]!=0x0A){
+                    return;
+                }
+                int[] receivedData=new int[receivedList.size()];
+                for(int i=0;i<receivedData.length;i++){
+                    receivedData[i]=receivedList.get(i);
+                }
+                receivedList.clear();
                 Fragment currentFragment=getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
                 if( currentFragment!=null&&currentFragment instanceof MonitorFragment){
                     handleReceivedDataByMonitorFragment(receivedData);
@@ -328,6 +346,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 mTransaction.replace(R.id.id_fragment_content, bluetoothFragment);
                 mTransaction.commit();
                 temp_position_index = VIEW_BLUETOOTH_INDEX;
+                setAutoFlagToTrue();
                 break;
             case R.id.id_nav_bt_data: //双fragment切换
                 if (temp_position_index != VIEW_DATA_INDEX) {
@@ -338,6 +357,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     mTransaction.commit();
                 }
                 temp_position_index = VIEW_DATA_INDEX;
+                setAutoFlagToTrue();
                 break;
             case R.id.id_nav_bt_setting:
                 if (temp_position_index != VIEW_SETTING_INDEX) {
@@ -348,6 +368,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     mTransaction.commit();
                 }
                 temp_position_index = VIEW_SETTING_INDEX;
+                setAutoFlagToTrue();
                 break;
             case R.id.id_nav_bt_log:
                 if (temp_position_index != VIEW_LOG_INDEX) {
@@ -358,6 +379,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     mTransaction.commit();
                 }
                 temp_position_index = VIEW_LOG_INDEX;
+                setAutoFlagToTrue();
                 break;
         }
     }
@@ -546,7 +568,40 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 alertState=BluetoothProtocol.ALERT_CLOSE;
                 Log.i(TAG, "关闭报警" );
                 break;
-
+            case BluetoothProtocol.SETTING_THRESHOLD_LH:
+                byte[] send_threshold_lh=new byte[9];
+                send_threshold_lh[0]=0x68;
+                send_threshold_lh[1]=0x34;
+                send_threshold_lh[2]=data[0];
+                send_threshold_lh[3]=data[1];
+                send_threshold_lh[4]=data[2];
+                send_threshold_lh[5]=data[3];
+                send_threshold_lh[6]=data[4];
+                send_threshold_lh[7]=0x0D;
+                send_threshold_lh[8]=0x0A;
+                mBluetoothLeService.writeData(send_threshold_lh);
+                settingThresholdHLState=BluetoothProtocol.SETTING_THRESHOLD_LH;
+                Log.i(TAG, "高低本底阈值设定" );
+                break;
+            case BluetoothProtocol.SETTING_AMEND:
+                byte[] send_amend=new byte[13];
+                send_amend[0]=0x68;
+                send_amend[1]=0x35;
+                send_amend[2]=data[0];
+                send_amend[3]=data[1];
+                send_amend[4]=data[2];
+                send_amend[5]=data[3];
+                send_amend[6]=data[4];
+                send_amend[7]=data[5];
+                send_amend[8]=data[6];
+                send_amend[9]=data[7];
+                send_amend[10]=data[8];
+                send_amend[11]=0x0D;
+                send_amend[12]=0x0A;
+                mBluetoothLeService.writeData(send_amend);
+                settingAmendState=BluetoothProtocol.SETTING_AMEND;
+                Log.i(TAG, "发送NaI修正系数" );
+                break;
             case BluetoothProtocol.SETTING_COLLECT_TIME:
                 byte[] send_collect_time=new byte[5];
                 send_collect_time[0]=0x68;
@@ -557,6 +612,55 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 mBluetoothLeService.writeData(send_collect_time);
                 settingCollectTimeState=BluetoothProtocol.SETTING_COLLECT_TIME;
                 Log.i(TAG, "发送设置采集时间" );
+                break;
+            case BluetoothProtocol.SETTING_COLLECT_BG_TIME:
+                byte[] send_collect_bg_time=new byte[5];
+                send_collect_bg_time[0]=0x68;
+                send_collect_bg_time[1]=0x37;
+                send_collect_bg_time[2]=data[0];
+                send_collect_bg_time[3]=0x0D;
+                send_collect_bg_time[4]=0x0A;
+                mBluetoothLeService.writeData(send_collect_bg_time);
+                settingCollectBGState=BluetoothProtocol.SETTING_COLLECT_BG_TIME;
+                Log.i(TAG, "强制本底采集" );
+                break;
+            case BluetoothProtocol.SETTING_THRESHOLD_ALERT:
+                byte[] send_threshold_alert=new byte[15];
+                send_threshold_alert[0]=0x68;
+                send_threshold_alert[1]=0x41;
+                send_threshold_alert[2]=data[0];
+                send_threshold_alert[3]=data[1];
+                send_threshold_alert[4]=data[2];
+                send_threshold_alert[5]=data[3];
+                send_threshold_alert[6]=data[4];
+                send_threshold_alert[7]=data[5];
+                send_threshold_alert[8]=data[6];
+                send_threshold_alert[9]=data[7];
+                send_threshold_alert[10]=data[8];
+                send_threshold_alert[11]=data[9];
+                send_threshold_alert[12]=data[10];
+                send_threshold_alert[13]=0x0D;
+                send_threshold_alert[14]=0x0A;
+                mBluetoothLeService.writeData(send_threshold_alert);
+                settingThresholdAlertState=BluetoothProtocol.SETTING_THRESHOLD_ALERT;
+                Log.i(TAG, "报警阈值设定" );
+                break;
+            case BluetoothProtocol.SETTING_GET_DATA_PART1:
+                byte[] send_get_part1={0x68,0x40,0x0D,0x0A};
+                mBluetoothLeService.writeData(send_get_part1);
+                settingGetDataPart1State=BluetoothProtocol.SETTING_GET_DATA_PART1;
+                Log.i(TAG, "获取参数设置一" );
+                break;
+            case BluetoothProtocol.SETTING_GET_DATA_PART2:
+                byte[] send_get_part2=new byte[5];
+                send_get_part2[0]=0x68;
+                send_get_part2[1]=0x43;
+                send_get_part2[2]=data[0];
+                send_get_part2[3]=0x0D;
+                send_get_part2[4]=0x0A;
+                mBluetoothLeService.writeData(send_get_part2);
+                settingGetDataPart2State=BluetoothProtocol.SETTING_GET_DATA_PART2;
+                Log.i(TAG, "获取参数设置二" );
                 break;
             case BluetoothProtocol.GET_SPECTRUM:
                 byte[] send_get_spectrum={0x68,0x32,0x0D,0x0A};
@@ -598,9 +702,15 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
-        if(getSpectrum==BluetoothProtocol.GET_SPECTRUM&&data.length==2051){
+        //获取能谱
+        if(getSpectrum==BluetoothProtocol.GET_SPECTRUM&&data.length==13){
             //monitor.handlerReceivedData(getSpectrum,data);
             jumpToSpectrum(data);
+            return;
+        }
+        if(settingCollectBGState==BluetoothProtocol.SETTING_COLLECT_BG_TIME_CONTINUE&&data.length==7){
+            collectBGVal=BluetoothProtocol.getVal(data,2,4);
+            settingCollectBGState=BluetoothProtocol.NO_STATE;
             return;
         }
         switch (receivedState){
@@ -675,6 +785,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
      * @create: 2019/11/27
      **/
     public void handleReceivedDataBySettingFragment(int[] data){
+        Log.i(TAG, "data len is "+data.length);
         boolean flag=false;
         SettingFragment setting =
                 (SettingFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
@@ -696,6 +807,42 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
+        else if(settingThresholdHLState==BluetoothProtocol.SETTING_THRESHOLD_LH){
+            int[] aim_threshold_lh_ok={0x68,0x31,0x0D,0x0A};
+            if(Arrays.equals(aim_threshold_lh_ok,data)){
+                settingThresholdHLState=BluetoothProtocol.SETTING_THRESHOLD_LH_OK;
+                flag=true;
+            }
+            else {
+                int[] aim_threshold_lh_failed={0x68,0x30,0x0D,0x0A};
+                if(Arrays.equals(aim_threshold_lh_failed,data)){
+                    settingThresholdHLState=BluetoothProtocol.SETTING_THRESHOLD_LH_FAILED;
+                    flag=true;
+                }
+            }
+            if(flag){
+                setting.handlerReceivedData(settingThresholdHLState,new int[]{});
+                return;
+            }
+        }
+        else if(settingAmendState==BluetoothProtocol.SETTING_AMEND){
+            int[] aim_amend_ok={0x68,0x31,0x0D,0x0A};
+            if(Arrays.equals(aim_amend_ok,data)){
+                settingAmendState=BluetoothProtocol.SETTING_AMEND_OK;
+                flag=true;
+            }
+            else {
+                int[] aim_amend_failed={0x68,0x30,0x0D,0x0A};
+                if(Arrays.equals(aim_amend_failed,data)){
+                    settingAmendState=BluetoothProtocol.SETTING_AMEND_FAILED;
+                    flag=true;
+                }
+            }
+            if(flag){
+                setting.handlerReceivedData(settingAmendState,new int[]{});
+                return;
+            }
+        }
         else if(settingCollectTimeState==BluetoothProtocol.SETTING_COLLECT_TIME){
             int[] aim_collect_time_ok={0x68,0x31,0x0D,0x0A};
             if(Arrays.equals(aim_collect_time_ok,data)){
@@ -714,6 +861,58 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
+        else if(settingCollectBGState==BluetoothProtocol.SETTING_COLLECT_BG_TIME){
+            int[] aim_collect_time_ok={0x68,0x31,0x0D,0x0A};
+            if(Arrays.equals(aim_collect_time_ok,data)){
+                settingCollectBGState=BluetoothProtocol.SETTING_COLLECT_BG_TIME_CONTINUE;
+                flag=true;
+            }
+            else {
+                int[] aim_collect_time_failed={0x68,0x30,0x0D,0x0A};
+                if(Arrays.equals(aim_collect_time_failed,data)){
+                    settingCollectBGState=BluetoothProtocol.SETTING_COLLECT_BG_TIME_FAILED;
+                    flag=true;
+                }
+            }
+            if(flag){
+                setting.handlerReceivedData(settingCollectBGState,new int[]{});
+                return;
+            }
+        }
+        else if(settingCollectBGState==BluetoothProtocol.SETTING_COLLECT_BG_TIME_CONTINUE&&data.length==7){
+            collectBGVal=BluetoothProtocol.getVal(data,2,4);
+            settingCollectBGState=BluetoothProtocol.NO_STATE;
+            Toast.makeText(getApplicationContext(), "本底值为"+collectBGVal, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        else if(settingThresholdAlertState==BluetoothProtocol.SETTING_THRESHOLD_ALERT){
+            int[] aim_threshold_alert_ok={0x68,0x31,0x0D,0x0A};
+            if(Arrays.equals(aim_threshold_alert_ok,data)){
+                settingThresholdAlertState=BluetoothProtocol.SETTING_THRESHOLD_ALERT_OK;
+                flag=true;
+            }
+            else {
+                int[] aim_threshold_alert_failed={0x68,0x30,0x0D,0x0A};
+                if(Arrays.equals(aim_threshold_alert_failed,data)){
+                    settingThresholdAlertState=BluetoothProtocol.SETTING_THRESHOLD_ALERT_OK;
+                    flag=true;
+                }
+            }
+            if(flag){
+                setting.handlerReceivedData(settingThresholdAlertState,new int[]{});
+                return;
+            }
+        }
+        else if(settingGetDataPart1State==BluetoothProtocol.SETTING_GET_DATA_PART1&&data.length==29){
+            settingGetDataPart1State=BluetoothProtocol.SETTING_GET_DATA_PART1_OK;
+            setting.handlerReceivedData(settingGetDataPart1State,data);
+            Log.i(TAG, "收到读取数据一！！！！" );
+        }
+        else if(settingGetDataPart2State==BluetoothProtocol.SETTING_GET_DATA_PART2&&data.length==14){
+            settingGetDataPart2State=BluetoothProtocol.SETTING_GET_DATA_PART2_OK;
+            setting.handlerReceivedData(settingGetDataPart2State,data);
+            Log.i(TAG, "收到读取数据二！！！！" );
+        }
     }
 
     /**
@@ -729,7 +928,19 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
         MainActivity.getSpectrum=BluetoothProtocol.NO_STATE;
         Intent intent=new Intent(MainActivity.this, LineChartActivity.class);
         intent.putExtra("data",nums);
+        setAutoFlagToTrue();
         startActivity(intent);
+    }
+
+    /**
+     * @description: autoFlag切换至true,切回巡测自动重连
+     * @author: lyj
+     * @create: 2019/11/27
+     **/
+    public static void setAutoFlagToTrue(){
+        if(receivedState==BluetoothProtocol.START_MEASURE_OK||receivedState==BluetoothProtocol.GET_DATA){
+            autoFlag=true;
+        }
     }
 
 }

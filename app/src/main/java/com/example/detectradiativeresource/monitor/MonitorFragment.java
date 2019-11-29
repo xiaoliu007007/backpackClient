@@ -149,6 +149,10 @@ public class MonitorFragment extends Fragment{
     @Override
     public void onResume() {
         super.onResume();
+        if(MainActivity.autoFlag&&MainActivity.receivedState!=BluetoothProtocol.NO_STATE){
+            MainActivity.autoFlag=false;
+            MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
+        }
     }
     @Override
     public void onStart() {
@@ -291,7 +295,7 @@ public class MonitorFragment extends Fragment{
             public void onClick(View v) {
                 try {
                     if(isStop) {
-                        if(MainActivity.receivedState==BluetoothProtocol.START_MEASURE_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE){
+                        if(MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE){
                             MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
                         }
                         else{
