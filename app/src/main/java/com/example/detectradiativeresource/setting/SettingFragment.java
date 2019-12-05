@@ -1,6 +1,8 @@
 package com.example.detectradiativeresource.setting;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -16,6 +18,9 @@ import com.example.detectradiativeresource.R;
 import com.example.detectradiativeresource.utils.BluetoothProtocol;
 import com.example.detectradiativeresource.utils.DataHelperUtils;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class SettingFragment extends Fragment{
     // 缓存Fragment view
     private static final String TAG = "SettingFragment";
@@ -29,7 +34,7 @@ public class SettingFragment extends Fragment{
     private int forceTimeVal;//强制本底采集时间
     private EditText forceTime;
     private int alertFlag;//声光报警 0开1关
-    private int collectType;//测量单位，0计数率，1计量率
+    //private int collectType;//测量单位，0计数率，1计量率
     private int thresholdType=1; //1,2,3NaI,GM,中子
     private int NaIAVal;
     private EditText NaI_a;
@@ -123,10 +128,10 @@ public class SettingFragment extends Fragment{
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
                 switch (i){
                     case R.id.collect_shu:
-                        collectType=0;
+                        MainActivity.valType=0;
                         break;
                     case R.id.collect_liang:
-                        collectType=1;
+                        MainActivity.valType=1;
                         break;
                 }
             }
@@ -151,7 +156,7 @@ public class SettingFragment extends Fragment{
         reading.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(MainActivity.receivedState== BluetoothProtocol.SHAKE_HANDS_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE){
+                if(MainActivity.receivedState!= BluetoothProtocol.SHAKE_HANDS_OK){
                     MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
                     isReading=true;
                 }
@@ -189,7 +194,7 @@ public class SettingFragment extends Fragment{
                     collectBGFlag=true;
                 }
                 ans+="声光报警类型为:"+alertFlag;
-                ans+="测量单位类型为:"+collectType;
+                ans+="测量单位类型为:"+MainActivity.valType;
                 ans+="---类型为:"+thresholdType;
 
                 if(threshold_high_val.getText().toString().equals("")||threshold_low_val.getText().toString().equals("")){
@@ -233,7 +238,7 @@ public class SettingFragment extends Fragment{
                     thresholdAlertFlag=true;
                 }
                 //Toast.makeText(getActivity().getApplicationContext(), ans, Toast.LENGTH_LONG).show();
-                if(MainActivity.receivedState== BluetoothProtocol.SHAKE_HANDS_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE){
+                if(MainActivity.receivedState!= BluetoothProtocol.SHAKE_HANDS_OK){
                     MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
                     isReading=false;
                 }
@@ -250,7 +255,7 @@ public class SettingFragment extends Fragment{
      **/
     public void sendReading(){
         MainActivity.send(BluetoothProtocol.SETTING_GET_DATA_PART1,new byte[]{});
-        MainActivity.send(BluetoothProtocol.SETTING_GET_DATA_PART2,new byte[]{(byte) thresholdType});
+        //MainActivity.send(BluetoothProtocol.SETTING_GET_DATA_PART2,new byte[]{(byte) thresholdType});
     }
 
     /**
@@ -259,17 +264,30 @@ public class SettingFragment extends Fragment{
      * @create: 2019/11/27
      **/
     private void sendSetting(){
+        Timer timer;
+        TimerTask task;
         if(thresholdHLFlag){
-            byte[] send_threshold_hl=new byte[5];
+            /*byte[] send_threshold_hl=new byte[5];
             send_threshold_hl[0]=(byte)thresholdType;
             send_threshold_hl[1]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdHigh)[0];
             send_threshold_hl[2]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdHigh)[1];
             send_threshold_hl[3]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdLow)[0];
             send_threshold_hl[4]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdLow)[1];
-            MainActivity.send(BluetoothProtocol.SETTING_THRESHOLD_LH,send_threshold_hl);
+            MainActivity.send(BluetoothProtocol.SETTING_THRESHOLD_LH,send_threshold_hl);*/
+            timer = new Timer();
+            task = new TimerTask() {
+                @Override
+                public void run() {
+                    // 需要做的事:发送消息
+                    Message message = new Message();
+                    message.what = 1;
+                    handler.sendMessage(message);
+                }
+            };
+            timer.schedule(task, 2000);
         }
         else if(amendFlag){
-            byte[] send_amend=new byte[9];
+            /*byte[] send_amend=new byte[9];
             send_amend[0]=(byte)thresholdType;
             send_amend[1]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIAVal)[0];
             send_amend[2]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIAVal)[1];
@@ -279,16 +297,49 @@ public class SettingFragment extends Fragment{
             send_amend[6]=(byte)BluetoothProtocol.getIntArrayByTwo(NaICVal)[1];
             send_amend[7]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIDVal)[0];
             send_amend[8]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIDVal)[1];
-            MainActivity.send(BluetoothProtocol.SETTING_AMEND,send_amend);
+            MainActivity.send(BluetoothProtocol.SETTING_AMEND,send_amend);*/
+            timer = new Timer();
+            task = new TimerTask() {
+                @Override
+                public void run() {
+                    // 需要做的事:发送消息
+                    Message message = new Message();
+                    message.what = 2;
+                    handler.sendMessage(message);
+                }
+            };
+            timer.schedule(task, 2000);
         }
         else if(collectTimeFlag){
-            MainActivity.send(BluetoothProtocol.SETTING_COLLECT_TIME,new byte[]{(byte) timeVal});
+            /*MainActivity.send(BluetoothProtocol.SETTING_COLLECT_TIME,new byte[]{(byte) timeVal});*/
+            timer = new Timer();
+            task = new TimerTask() {
+                @Override
+                public void run() {
+                    // 需要做的事:发送消息
+                    Message message = new Message();
+                    message.what = 3;
+                    handler.sendMessage(message);
+                }
+            };
+            timer.schedule(task, 2000);
         }
         else if(collectBGFlag){
-            MainActivity.send(BluetoothProtocol.SETTING_COLLECT_BG_TIME,new byte[]{(byte)forceTimeVal});
+            /*MainActivity.send(BluetoothProtocol.SETTING_COLLECT_BG_TIME,new byte[]{(byte)forceTimeVal});*/
+            timer = new Timer();
+            task = new TimerTask() {
+                @Override
+                public void run() {
+                    // 需要做的事:发送消息
+                    Message message = new Message();
+                    message.what = 4;
+                    handler.sendMessage(message);
+                }
+            };
+            timer.schedule(task, 2000);
         }
         else if(thresholdAlertFlag){
-            byte[] send_threshold_alert=new byte[11];
+            /*byte[] send_threshold_alert=new byte[11];
             send_threshold_alert[0]=(byte)thresholdType;
             send_threshold_alert[1]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_1)[0];
             send_threshold_alert[2]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_1)[1];
@@ -300,7 +351,18 @@ public class SettingFragment extends Fragment{
             send_threshold_alert[8]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_4)[1];
             send_threshold_alert[9]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_5)[0];
             send_threshold_alert[10]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_5)[1];
-            MainActivity.send(BluetoothProtocol.SETTING_THRESHOLD_ALERT,send_threshold_alert);
+            MainActivity.send(BluetoothProtocol.SETTING_THRESHOLD_ALERT,send_threshold_alert);*/
+            timer = new Timer();
+            task = new TimerTask() {
+                @Override
+                public void run() {
+                    // 需要做的事:发送消息
+                    Message message = new Message();
+                    message.what = 5;
+                    handler.sendMessage(message);
+                }
+            };
+            timer.schedule(task, 2000);
         }
     }
 
@@ -319,9 +381,11 @@ public class SettingFragment extends Fragment{
                 else{
                     sendSetting();
                 }
+                MainActivity.receivedState=BluetoothProtocol.SHAKE_HANDS_OK;
                 break;
             case BluetoothProtocol.SHAKE_HANDS_FAILED:
                 Toast.makeText(getActivity().getApplicationContext(), "握手失败,无法设定", Toast.LENGTH_LONG).show();
+                MainActivity.receivedState=BluetoothProtocol.SHAKE_HANDS_FAILED;
                 break;
             case BluetoothProtocol.SETTING_THRESHOLD_LH_OK:
                 Toast.makeText(getActivity().getApplicationContext(), "设置高低本底阈值成功", Toast.LENGTH_LONG).show();
@@ -379,7 +443,7 @@ public class SettingFragment extends Fragment{
                 break;
             case BluetoothProtocol.SETTING_GET_DATA_PART1_OK:
                 readSettingPart1(data);
-                MainActivity.settingGetDataPart1State=BluetoothProtocol.NO_STATE;
+                //MainActivity.settingGetDataPart1State=BluetoothProtocol.NO_STATE;
                 break;
             case BluetoothProtocol.SETTING_GET_DATA_PART2_OK:
                 readSettingPart2(data);
@@ -406,6 +470,7 @@ public class SettingFragment extends Fragment{
         NaI_a.setText(String.valueOf(NaIAVal));
         NaI_b.setText(String.valueOf(NaIBVal));
         Log.i(TAG, "处理读取数据一！！！！" );
+        MainActivity.send(BluetoothProtocol.SETTING_GET_DATA_PART2,new byte[]{(byte) thresholdType});
     }
 
     /**
@@ -426,5 +491,56 @@ public class SettingFragment extends Fragment{
         alert_threshold_val_5.setText(String.valueOf(thresholdAlert_5));
         Log.i(TAG, "处理读取数据二！！！！" );
     }
+
+    Handler handler = new Handler() {
+        public void handleMessage(Message msg) {
+            switch (msg.what){
+                case 1:
+                    byte[] send_threshold_hl=new byte[5];
+                    send_threshold_hl[0]=(byte)thresholdType;
+                    send_threshold_hl[1]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdHigh)[0];
+                    send_threshold_hl[2]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdHigh)[1];
+                    send_threshold_hl[3]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdLow)[0];
+                    send_threshold_hl[4]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdLow)[1];
+                    MainActivity.send(BluetoothProtocol.SETTING_THRESHOLD_LH,send_threshold_hl);
+                    break;
+                case 2:
+                    byte[] send_amend=new byte[9];
+                    send_amend[0]=(byte)thresholdType;
+                    send_amend[1]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIAVal)[0];
+                    send_amend[2]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIAVal)[1];
+                    send_amend[3]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIBVal)[0];
+                    send_amend[4]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIBVal)[1];
+                    send_amend[5]=(byte)BluetoothProtocol.getIntArrayByTwo(NaICVal)[0];
+                    send_amend[6]=(byte)BluetoothProtocol.getIntArrayByTwo(NaICVal)[1];
+                    send_amend[7]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIDVal)[0];
+                    send_amend[8]=(byte)BluetoothProtocol.getIntArrayByTwo(NaIDVal)[1];
+                    MainActivity.send(BluetoothProtocol.SETTING_AMEND,send_amend);
+                    break;
+                case 3:
+                    MainActivity.send(BluetoothProtocol.SETTING_COLLECT_TIME,new byte[]{(byte) timeVal});
+                    break;
+                case 4:
+                    MainActivity.send(BluetoothProtocol.SETTING_COLLECT_BG_TIME,new byte[]{(byte)forceTimeVal});
+                    break;
+                case 5:
+                    byte[] send_threshold_alert=new byte[11];
+                    send_threshold_alert[0]=(byte)thresholdType;
+                    send_threshold_alert[1]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_1)[0];
+                    send_threshold_alert[2]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_1)[1];
+                    send_threshold_alert[3]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_2)[0];
+                    send_threshold_alert[4]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_2)[1];
+                    send_threshold_alert[5]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_3)[0];
+                    send_threshold_alert[6]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_3)[1];
+                    send_threshold_alert[7]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_4)[0];
+                    send_threshold_alert[8]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_4)[1];
+                    send_threshold_alert[9]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_5)[0];
+                    send_threshold_alert[10]=(byte)BluetoothProtocol.getIntArrayByTwo(thresholdAlert_5)[1];
+                    MainActivity.send(BluetoothProtocol.SETTING_THRESHOLD_ALERT,send_threshold_alert);
+                    break;
+            }
+            super.handleMessage(msg);
+        }
+    };
 }
 

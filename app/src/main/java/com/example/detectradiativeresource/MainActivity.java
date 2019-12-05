@@ -74,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static int total_n_jiliang;
     public static int alert_n_jiliang;
     public static int valType=0;//0表示计数率，1表示计量率
+    public static boolean isAlertOpen = true; //是否是打开报警状态
 
     public static double interval;//范围内历史轨迹点的间隔数
     public static double startLatitude;
@@ -85,6 +86,8 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static double rightLongitude=0.0;
     public static double rightLatitude=0.0;
     public static int rightDir=-1;
+    public static int nowValue;//当前点辐射值数据
+
     public static int connectedState=0; //和背包连接状态，1表示处于握手状态，2表示处于复位状态，3表示在测量数据,4表示停止，0表示无状态
     /**
      * 五个Fragments
@@ -124,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
             mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
             if (!mBluetoothLeService.initialize()) {
                 Log.e(TAG, "Unable to initialize Bluetooth");
+                finish();
             }
             Log.e(TAG, "-----------------mServiceConnection connect--------------");
             mBluetoothLeService.connect(address);
@@ -162,24 +166,54 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
             }else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 //displayData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA));
                 byte[] data=intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-                for(byte d:data){
-                    receivedList.add(d<0?256 + d:d);
+                Log.v("log","----------------------------received enter------------------"+data.length);
+                int i=0;
+                while(i<data.length-1){
+                    receivedList.add(data[i]<0?256 + data[i]:data[i]);
+                    if(data[i]==0x0D&&data[i+1]==0x0A){
+                        i++;
+                        receivedList.add(data[i]<0?256 + data[i]:data[i]);
+                        int[] receivedData=new int[receivedList.size()];
+                        for(int n=0;n<receivedData.length;n++){
+                            receivedData[n]=receivedList.get(n);
+                            Log.i("log","list is "+n+" is "+receivedData[n]);
+                        }
+                        receivedList.clear();
+                        Log.i("log","----------------------------received exit-------------------");
+                        Fragment currentFragment=getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
+                        if( currentFragment!=null&&currentFragment instanceof MonitorFragment){
+                            handleReceivedDataByMonitorFragment(receivedData);
+                        }
+                        if( currentFragment!=null&&currentFragment instanceof SettingFragment){
+                            handleReceivedDataBySettingFragment(receivedData);
+                        }
+
+                    }
+                    i++;
                 }
-                if(data[data.length-2]!=0x0D||data[data.length-1]!=0x0A){
+                if(i==data.length-1){
+                    receivedList.add(data[i]<0?256 + data[i]:data[i]);
+                }
+                /*Log.v("log","list length is "+receivedList.size());
+                for(int i=0;i<receivedList.size();i++){
+                    Log.i("log","list is "+i+" is "+receivedList.get(i));
+                }*/
+                if(data.length<2||data[data.length-2]!=0x0D||data[data.length-1]!=0x0A){
                     return;
                 }
-                int[] receivedData=new int[receivedList.size()];
+                /*int[] receivedData=new int[receivedList.size()];
                 for(int i=0;i<receivedData.length;i++){
                     receivedData[i]=receivedList.get(i);
                 }
                 receivedList.clear();
+                Log.i("log","----------------------------received exit-------------------");
                 Fragment currentFragment=getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
                 if( currentFragment!=null&&currentFragment instanceof MonitorFragment){
                     handleReceivedDataByMonitorFragment(receivedData);
                 }
                 if( currentFragment!=null&&currentFragment instanceof SettingFragment){
                     handleReceivedDataBySettingFragment(receivedData);
-                }
+                }*/
             }else if (BluetoothLeService.ACTION_WRITE_SUCCESSFUL.equals(action)) {
                /* mSendBytes.setText(sendBytes + " ");
                 if (sendDataLen>0)
@@ -239,6 +273,12 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     protected void onResume() {
         super.onResume();
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(mGattUpdateReceiver);
     }
 
 
@@ -521,7 +561,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
      * @author: lyj
      * @create: 2019/09/02
      **/
-    private String getTime() {
+    private static String getTime() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         String date = dateFormat.format(new java.util.Date());
         return date;
@@ -557,16 +597,25 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 mBluetoothLeService.writeData(send_stop_data);
                 receivedState=BluetoothProtocol.STOP_MEASURE;
                 Log.i(TAG, "停止测量中" );
+                break;
             case BluetoothProtocol.ALERT_START:
-                byte[] send_alert_start={0x68,0x33,0x0D,0x0A};
+                byte[] send_alert_start={0x68,0x00,0x0D,0x0A};
+                int n1=0xA1;
+                send_alert_start[1]=(byte)n1;
                 mBluetoothLeService.writeData(send_alert_start);
-                Log.i(TAG, "收到报警" );
+                Log.i(TAG, "收到报警" +getTime());
                 break;
             case BluetoothProtocol.ALERT_CLOSE:
-                byte[] send_alert_close={0x68,0x42,0x0D,0x0A};
+                byte[] send_alert_close={0x68,0x42,0x01,0x0D,0x0A};
                 mBluetoothLeService.writeData(send_alert_close);
                 alertState=BluetoothProtocol.ALERT_CLOSE;
                 Log.i(TAG, "关闭报警" );
+                break;
+            case BluetoothProtocol.ALERT_OPEN:
+                byte[] send_alert_open={0x68,0x42,0x00,0x0D,0x0A};
+                mBluetoothLeService.writeData(send_alert_open);
+                alertState=BluetoothProtocol.ALERT_OPEN;
+                Log.i(TAG, "开启报警" );
                 break;
             case BluetoothProtocol.SETTING_THRESHOLD_LH:
                 byte[] send_threshold_lh=new byte[9];
@@ -702,8 +751,22 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
+        if(alertState==BluetoothProtocol.ALERT_OPEN){
+            int[] aim_alert_close_ok={0x68,0x31,0x0D,0x0A};
+            if(Arrays.equals(aim_alert_close_ok,data)){
+                alertState=BluetoothProtocol.ALERT_OPEN_OK;
+                monitor.handlerReceivedData(alertState,new int[]{});
+                return;
+            }
+            int[] aim_alert_close_failed={0x68,0x30,0x0D,0x0A};
+            if(Arrays.equals(aim_alert_close_failed,data)){
+                alertState=BluetoothProtocol.ALERT_OPEN_FAILED;
+                monitor.handlerReceivedData(alertState,new int[]{});
+                return;
+            }
+        }
         //获取能谱
-        if(getSpectrum==BluetoothProtocol.GET_SPECTRUM&&data.length==13){
+        if(getSpectrum==BluetoothProtocol.GET_SPECTRUM&&data.length==2051){
             //monitor.handlerReceivedData(getSpectrum,data);
             jumpToSpectrum(data);
             return;
@@ -786,6 +849,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
      **/
     public void handleReceivedDataBySettingFragment(int[] data){
         Log.i(TAG, "data len is "+data.length);
+        Log.i(TAG, "---------setting----------- ");
         boolean flag=false;
         SettingFragment setting =
                 (SettingFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
@@ -807,7 +871,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
-        else if(settingThresholdHLState==BluetoothProtocol.SETTING_THRESHOLD_LH){
+        if(settingThresholdHLState==BluetoothProtocol.SETTING_THRESHOLD_LH){
             int[] aim_threshold_lh_ok={0x68,0x31,0x0D,0x0A};
             if(Arrays.equals(aim_threshold_lh_ok,data)){
                 settingThresholdHLState=BluetoothProtocol.SETTING_THRESHOLD_LH_OK;
@@ -825,7 +889,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
-        else if(settingAmendState==BluetoothProtocol.SETTING_AMEND){
+        if(settingAmendState==BluetoothProtocol.SETTING_AMEND){
             int[] aim_amend_ok={0x68,0x31,0x0D,0x0A};
             if(Arrays.equals(aim_amend_ok,data)){
                 settingAmendState=BluetoothProtocol.SETTING_AMEND_OK;
@@ -843,7 +907,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
-        else if(settingCollectTimeState==BluetoothProtocol.SETTING_COLLECT_TIME){
+        if(settingCollectTimeState==BluetoothProtocol.SETTING_COLLECT_TIME){
             int[] aim_collect_time_ok={0x68,0x31,0x0D,0x0A};
             if(Arrays.equals(aim_collect_time_ok,data)){
                 settingCollectTimeState=BluetoothProtocol.SETTING_COLLECT_TIME_OK;
@@ -861,7 +925,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
-        else if(settingCollectBGState==BluetoothProtocol.SETTING_COLLECT_BG_TIME){
+        if(settingCollectBGState==BluetoothProtocol.SETTING_COLLECT_BG_TIME){
             int[] aim_collect_time_ok={0x68,0x31,0x0D,0x0A};
             if(Arrays.equals(aim_collect_time_ok,data)){
                 settingCollectBGState=BluetoothProtocol.SETTING_COLLECT_BG_TIME_CONTINUE;
@@ -879,13 +943,13 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
-        else if(settingCollectBGState==BluetoothProtocol.SETTING_COLLECT_BG_TIME_CONTINUE&&data.length==7){
-            collectBGVal=BluetoothProtocol.getVal(data,2,4);
+        if(settingCollectBGState==BluetoothProtocol.SETTING_COLLECT_BG_TIME_CONTINUE&&data.length==8){
+            collectBGVal=BluetoothProtocol.getVal(data,2,5);
             settingCollectBGState=BluetoothProtocol.NO_STATE;
             Toast.makeText(getApplicationContext(), "本底值为"+collectBGVal, Toast.LENGTH_SHORT).show();
             return;
         }
-        else if(settingThresholdAlertState==BluetoothProtocol.SETTING_THRESHOLD_ALERT){
+        if(settingThresholdAlertState==BluetoothProtocol.SETTING_THRESHOLD_ALERT){
             int[] aim_threshold_alert_ok={0x68,0x31,0x0D,0x0A};
             if(Arrays.equals(aim_threshold_alert_ok,data)){
                 settingThresholdAlertState=BluetoothProtocol.SETTING_THRESHOLD_ALERT_OK;
@@ -903,15 +967,18 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 return;
             }
         }
-        else if(settingGetDataPart1State==BluetoothProtocol.SETTING_GET_DATA_PART1&&data.length==29){
+        if(settingGetDataPart1State==BluetoothProtocol.SETTING_GET_DATA_PART1&&data.length==29){
             settingGetDataPart1State=BluetoothProtocol.SETTING_GET_DATA_PART1_OK;
             setting.handlerReceivedData(settingGetDataPart1State,data);
+            setting.handlerReceivedData(settingGetDataPart1State,data);
             Log.i(TAG, "收到读取数据一！！！！" );
+            return;
         }
-        else if(settingGetDataPart2State==BluetoothProtocol.SETTING_GET_DATA_PART2&&data.length==14){
+        if(settingGetDataPart2State==BluetoothProtocol.SETTING_GET_DATA_PART2&&data.length==14){
             settingGetDataPart2State=BluetoothProtocol.SETTING_GET_DATA_PART2_OK;
             setting.handlerReceivedData(settingGetDataPart2State,data);
             Log.i(TAG, "收到读取数据二！！！！" );
+            return;
         }
     }
 
@@ -939,6 +1006,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
      **/
     public static void setAutoFlagToTrue(){
         if(receivedState==BluetoothProtocol.START_MEASURE_OK||receivedState==BluetoothProtocol.GET_DATA){
+            Log.i(TAG, "-------------------receivedState is "+receivedState);
             autoFlag=true;
         }
     }

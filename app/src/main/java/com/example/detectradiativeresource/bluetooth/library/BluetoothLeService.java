@@ -146,7 +146,15 @@ public class BluetoothLeService extends Service {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-            Log.v("log","read change!!!!!!!!!!!!!!!!!!!!");
+            Log.v("log","read change!!!!!!!!!!!!!!!!!!!!"+characteristic.getValue().length);
+            /*byte[] data=characteristic.getValue();
+            Log.v("log","read change!!!!!!!!!!!!!!!!!!!!"+data.length);
+            for(int i=0;i<data.length;i++){
+                Log.v("service","read change!!!!!!!!!!!!!!!!!!!!"+i+" is "+data[i]);
+            }
+            for(byte n:data){
+                Log.v("service","read change!!!!!!!!!!!!!!!!!!!!"+n);
+            }*/
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
 
@@ -343,6 +351,7 @@ public class BluetoothLeService extends Service {
             mWriteCharacteristic.setValue(data);
             //mBluetoothLeService.writeC
             mBluetoothGatt.writeCharacteristic(mWriteCharacteristic);
+            Log.i(TAG, "@@@@@@@@@@@@@@@@@@@@@@write@@@@@@@@@@@@@@@@@@@@@@@@@@"+data.length +"!!!!"+mWriteCharacteristic.getValue().length);
         }
     }
     /**

@@ -15,6 +15,21 @@ android {
             abiFilters 'arm64-v8a', 'armeabi' //, 'x86', , 'x86_64', 'arm64-v8a'
         }
     }
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def outputFile = output.outputFile
+            def fileName
+            if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                if (variant.buildType.name.equals('release')) {//如果是release包
+                    fileName = "detect.apk"
+                } else if (variant.buildType.name.equals('debug')) {//如果是debug包
+                    fileName = "detect.apk"
+                }
+                outputFileName = fileName
+            }
+        }
+    }
+
     buildTypes {
         debug {
             minifyEnabled false

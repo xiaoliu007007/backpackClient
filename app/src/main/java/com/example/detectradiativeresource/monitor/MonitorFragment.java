@@ -98,6 +98,7 @@ public class MonitorFragment extends Fragment{
     private String measureVal_r;
     private String measureVal_n;
     private boolean wifiFlag;//蓝牙是否连接
+    //private boolean isAlertOpen = true; //是否是打开报警状态
 
     private int sendFlag;//表示目前所处状态，1是连接中，2是已经连接，3是断开。
 
@@ -151,7 +152,13 @@ public class MonitorFragment extends Fragment{
         super.onResume();
         if(MainActivity.autoFlag&&MainActivity.receivedState!=BluetoothProtocol.NO_STATE){
             MainActivity.autoFlag=false;
-            MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
+            MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
+        }
+        if(MainActivity.isAlertOpen){
+            btn_alert.setText("关闭报警");
+        }
+        else {
+            btn_alert.setText("打开报警");
         }
     }
     @Override
@@ -172,9 +179,11 @@ public class MonitorFragment extends Fragment{
     @Override
     public void onPause(){
         super.onPause();
-        Message message4 = new Message();
-        message4.what = 4;
-        handler.sendMessage(message4);
+        if(MainActivity.receivedState!=BluetoothProtocol.NO_STATE){
+            Message message4 = new Message();
+            message4.what = 3;
+            handler.sendMessage(message4);
+        }
         myStop();
     }
     @Override
@@ -295,15 +304,28 @@ public class MonitorFragment extends Fragment{
             public void onClick(View v) {
                 try {
                     if(isStop) {
-                        if(MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE){
+                        MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
+                        /*if(MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE||
+                                MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS){
                             MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
                         }
                         else{
                             MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
-                        }
+                        }*/
                     }else{
                         stopTimer();
-                        MainActivity.send(BluetoothProtocol.STOP_MEASURE,new byte[]{});
+                        //MainActivity.send(BluetoothProtocol.STOP_MEASURE,new byte[]{});
+                        timer = new Timer();
+                        task = new TimerTask() {
+                            @Override
+                            public void run() {
+                                // 需要做的事:发送消息
+                                Message message = new Message();
+                                message.what = 3;
+                                handler.sendMessage(message);
+                            }
+                        };
+                        timer.schedule(task, 2000);
                         //stopTimer();
                         //start.setText("开始");
                     }
@@ -326,11 +348,17 @@ public class MonitorFragment extends Fragment{
         });
         btn_alert.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
-                if(MainActivity.alertState==BluetoothProtocol.ALERT_START){
-                    stopMusic();
-                    stopViberate();
-                    mAlertOverlay.remove();
+                if(MainActivity.isAlertOpen){
+                    if(MainActivity.alertState==BluetoothProtocol.ALERT_START){
+                        stopMusic();
+                        stopViberate();
+                        mAlertOverlay.remove();
+                        //MainActivity.send(BluetoothProtocol.ALERT_CLOSE,new byte[]{});
+                    }
                     MainActivity.send(BluetoothProtocol.ALERT_CLOSE,new byte[]{});
+                }
+                else{
+                    MainActivity.send(BluetoothProtocol.ALERT_OPEN,new byte[]{});
                 }
             }
         });
@@ -343,7 +371,18 @@ public class MonitorFragment extends Fragment{
                     Toast.makeText(getActivity().getApplicationContext(), "未开启测量，请点击开始按钮", Toast.LENGTH_LONG).show();
                 }
                 else{
-                    MainActivity.send(BluetoothProtocol.GET_SPECTRUM,new byte[]{});
+                    stopTimer();
+                    timer = new Timer();
+                    task = new TimerTask() {
+                        @Override
+                        public void run() {
+                            // 需要做的事:发送消息
+                            Message message = new Message();
+                            message.what = 4;
+                            handler.sendMessage(message);
+                        }
+                    };
+                    timer.schedule(task, 2000);
                 }
             }
         });
@@ -398,6 +437,7 @@ public class MonitorFragment extends Fragment{
         try {
             if(this.mMediaPlayer != null) {
                 this.mMediaPlayer.stop();
+                Log.d(TAG, "---------stop music-----------");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -436,6 +476,56 @@ public class MonitorFragment extends Fragment{
             timer = new Timer();
         }
         task=null;
+        /*switch (msg){
+            case BluetoothProtocol.SHAKE_HANDS:
+                task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 2;
+                        handler.sendMessage(message);
+                    }
+                };
+                timer.schedule(task, 0,2500);
+                break;
+            case BluetoothProtocol.START_MEASURE:
+                task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 3;
+                        handler.sendMessage(message);
+                    }
+                };
+                timer.schedule(task, 0,2500);
+                break;
+            case BluetoothProtocol.GET_DATA:
+                task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 4;
+                        handler.sendMessage(message);
+                    }
+                };
+                timer.schedule(task, 0,2000);
+                break;
+            case BluetoothProtocol.STOP_MEASURE:
+                task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 5;
+                        handler.sendMessage(message);
+                    }
+                };
+                timer.schedule(task, 0,2500);
+                break;
+        }*/
         task = new TimerTask() {
             @Override
             public void run() {
@@ -480,6 +570,12 @@ public class MonitorFragment extends Fragment{
                 case 2:
                     changeWifi();
                     break;
+                case 3:
+                    MainActivity.send(BluetoothProtocol.STOP_MEASURE,new byte[]{});
+                    break;
+                case 4:
+                    MainActivity.send(BluetoothProtocol.GET_SPECTRUM,new byte[]{});
+                    break;
             }
             super.handleMessage(msg);
         }
@@ -501,17 +597,18 @@ public class MonitorFragment extends Fragment{
             case BluetoothProtocol.START_MEASURE_OK:
                 start.setText("停止");
                 isStop = !isStop;
+                DataHelperUtils.saveDataTotalMsg();
                 startTimer();
                 break;
             case BluetoothProtocol.START_MEASURE_FAILED:
                 Toast.makeText(getActivity().getApplicationContext(), "启动测量失败", Toast.LENGTH_LONG).show();
                 break;
             case BluetoothProtocol.GET_DATA:
-                DataHelperUtils.saveDataTotalMsg();
+                //DataHelperUtils.saveDataTotalMsg();
                 UpdateUI(data);
                 break;
             case BluetoothProtocol.STOP_MEASURE_OK:
-                MainActivity.receivedState=BluetoothProtocol.START_MEASURE_OK;
+                MainActivity.receivedState=BluetoothProtocol.NO_STATE;
                 myStop();
                 break;
             case BluetoothProtocol.STOP_MEASURE_FAILED:
@@ -524,10 +621,22 @@ public class MonitorFragment extends Fragment{
             case BluetoothProtocol.ALERT_CLOSE_OK:
                 Toast.makeText(getActivity().getApplicationContext(), "关闭报警成功", Toast.LENGTH_LONG).show();
                 MainActivity.alertState=BluetoothProtocol.NO_STATE;
+                MainActivity.isAlertOpen=!MainActivity.isAlertOpen;
+                btn_alert.setText("打开报警");
                 break;
             case BluetoothProtocol.ALERT_CLOSE_FAILED:
                 Toast.makeText(getActivity().getApplicationContext(), "关闭报警失败，请重新关闭", Toast.LENGTH_LONG).show();
                 MainActivity.alertState=BluetoothProtocol.ALERT_START;
+                break;
+            case BluetoothProtocol.ALERT_OPEN_OK:
+                Toast.makeText(getActivity().getApplicationContext(), "打开报警成功", Toast.LENGTH_LONG).show();
+                MainActivity.alertState=BluetoothProtocol.NO_STATE;
+                MainActivity.isAlertOpen=!MainActivity.isAlertOpen;
+                btn_alert.setText("关闭报警");
+                break;
+            case BluetoothProtocol.ALERT_OPEN_FAILED:
+                Toast.makeText(getActivity().getApplicationContext(), "打开报警失败，请重新打开", Toast.LENGTH_LONG).show();
+                MainActivity.alertState=BluetoothProtocol.ALERT_OPEN;
                 break;
             /*case BluetoothProtocol.GET_SPECTRUM:
                 MainActivity.getSpectrum=BluetoothProtocol.NO_STATE;
@@ -570,6 +679,9 @@ public class MonitorFragment extends Fragment{
                 .rotate(-30) //旋转角度
                 .position(llText);
         //在地图上显示文字覆盖物
+        if(mAlertOverlay!=null){
+            mAlertOverlay.remove();
+        }
         mAlertOverlay = mBaiduMap.addOverlay(mTextOptions);
     }
 
@@ -601,6 +713,7 @@ public class MonitorFragment extends Fragment{
             if(isAlert){
                 DataHelperUtils.updateDataTotalMsgIsAlarm();
             }
+            MainActivity.nowValue=r_val;
             DataHelperUtils.saveDataMsg(String.valueOf(r_val),longitude,latitude,0,isAlert);
         }
         else if(MainActivity.valType==1){
@@ -625,6 +738,7 @@ public class MonitorFragment extends Fragment{
             if(isAlert){
                 DataHelperUtils.updateDataTotalMsgIsAlarm();
             }
+            MainActivity.nowValue=r_val;
             DataHelperUtils.saveDataMsg(String.valueOf(r_val),longitude,latitude,0,isAlert);
         }
     }
@@ -875,7 +989,7 @@ public class MonitorFragment extends Fragment{
      * @create: 2019/09/10
      **/
     public void findStart() {
-        if(MainActivity.testFlag){
+        /*if(MainActivity.testFlag){
             startValue=test.findData();
             test.find();
             if(startValue!=0){
@@ -885,6 +999,14 @@ public class MonitorFragment extends Fragment{
                 flag=1;
                 pointStart();
             }
+        }*/
+        startValue=MainActivity.nowValue;
+        if(startValue!=0){
+            Toast.makeText(getActivity().getApplicationContext(), String.valueOf(startValue), Toast.LENGTH_LONG).show();
+            MainActivity.startLongitude=longitude;
+            MainActivity.startLatitude=latitude;
+            flag=1;
+            pointStart();
         }
     }
 
@@ -922,14 +1044,14 @@ public class MonitorFragment extends Fragment{
             if(DistanceUtil.getDistance(new LatLng(MainActivity.latitude,MainActivity.longitude),start)<3.5){
                 mBaiduMap.clear();
                 pointStart();
-                if(now_dir==6){
+                if(now_dir==7){
                     Toast.makeText(getActivity().getApplicationContext(), "完成", Toast.LENGTH_LONG).show();
                     flag=3;
                     now_dir=-1;
                     isColored=!isColored;
                     return;
                 }
-                now_dir+=2;
+                now_dir+=1;
                 isColored=!isColored;
                 flag=1;
                 return;
@@ -945,7 +1067,8 @@ public class MonitorFragment extends Fragment{
      **/
     public void calculateDir() {
         Log.i(TAG, "calculate Dirnb ，flag==1");
-        int nextValue=test.findData();
+        //int nextValue=test.findData();
+        int nextValue=MainActivity.nowValue;
         Toast.makeText(getActivity().getApplicationContext(), "当前辐射值"+nextValue, Toast.LENGTH_LONG).show();
         double distance=DistanceUtil.getDistance(new LatLng(MainActivity.latitude,MainActivity.longitude),new LatLng(MainActivity.startLatitude,MainActivity.startLongitude));
         double incr=(nextValue-startValue)/distance;
@@ -970,7 +1093,8 @@ public class MonitorFragment extends Fragment{
             Overlay track = mBaiduMap.addOverlay(polyline);
             setGuide=!setGuide;
         }
-        int nowValue=test.findData();//判断此时的辐射值是否减小或者到达最大值
+        //int nowValue=test.findData();//判断此时的辐射值是否减小或者到达最大值
+        int nowValue=MainActivity.nowValue;
         Toast.makeText(getActivity().getApplicationContext(), "当前辐射值"+nowValue, Toast.LENGTH_LONG).show();
         if(nowValue>=MainActivity.maxValue){
             MainActivity.rightDir=right_dir;

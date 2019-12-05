@@ -17,6 +17,9 @@ public class BluetoothProtocol {
     public static final String ALERT_CLOSE="alert close";//关闭报警
     public static final String ALERT_CLOSE_OK="alert close ok";//关闭报警成功
     public static final String ALERT_CLOSE_FAILED="alert close failed";//关闭报警失败
+    public static final String ALERT_OPEN="alert open";//开启报警
+    public static final String ALERT_OPEN_OK="alert open ok";//开启报警成功
+    public static final String ALERT_OPEN_FAILED="alert open failed";//开启报警失败
 
     public static final String SETTING_THRESHOLD_LH="setting threshold low high";//高低本底阈值命令
     public static final String SETTING_THRESHOLD_LH_OK="setting threshold low high ok";//高低本底阈值成功
