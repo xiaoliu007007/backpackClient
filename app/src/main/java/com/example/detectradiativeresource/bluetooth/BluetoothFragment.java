@@ -32,6 +32,7 @@ public class BluetoothFragment extends Fragment implements MainActivity.Bluetoot
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         rootView = inflater.inflate(R.layout.fragment_bluetooth,container, false);
         bluetoothMsg=rootView.findViewById(R.id.id_bluetooth_msg);
+        bluetoothMsg.setText(MainActivity.connectedStateMsg);
         return rootView;
     }
 

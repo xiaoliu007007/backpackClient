@@ -62,18 +62,22 @@ public class MonitorFragment extends Fragment{
     private static final String TAG = "TraceFragment";
     private Timer timer = null;
     private TimerTask task = null;
+    private Timer sendTimer = null;
+    private TimerTask sendTask = null;
     private TextView r_valView;
     private TextView n_valView;
     private Button start;
     private Button cal;
     private Button btn_alert;
-    private Button btn_spectrum;
+    //private Button btn_spectrum;
     private Vibrator vibrator;
     private MediaPlayer mMediaPlayer;
     private Overlay mAlertOverlay;
+    private Overlay mAlertOverlayMsg;
     private ProgressBar progressBar_r;
     private ProgressBar progressBar_n;
-    private LinearLayout wifiBg;
+    private TextView r_valViewMsg;
+    private TextView n_valViewMsg;
 
     public double longitude=0.0;
     public double latitude=0.0;
@@ -98,9 +102,12 @@ public class MonitorFragment extends Fragment{
     private String measureVal_r;
     private String measureVal_n;
     private boolean wifiFlag;//蓝牙是否连接
+    private boolean isSendAlert=false;//是否发送过报警事件
+    private MainActivity mainActivity;
     //private boolean isAlertOpen = true; //是否是打开报警状态
 
     private int sendFlag;//表示目前所处状态，1是连接中，2是已经连接，3是断开。
+    //private boolean isNomalOnce=true;//是否是第一次进入正常区域
 
     public MonitorFragment(){
 
@@ -121,6 +128,7 @@ public class MonitorFragment extends Fragment{
         rootView = inflater.inflate(R.layout.fragment_monitor, container, false);
         initMap(rootView);
         initDetect(rootView);
+        mainActivity=(MainActivity)getActivity();
         return rootView;
     }
     private void initMap(View view){
@@ -152,14 +160,18 @@ public class MonitorFragment extends Fragment{
         super.onResume();
         if(MainActivity.autoFlag&&MainActivity.receivedState!=BluetoothProtocol.NO_STATE){
             MainActivity.autoFlag=false;
-            MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
+            //MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
+            startMeasure();
         }
-        if(MainActivity.isAlertOpen){
+        /*if(MainActivity.isAlertOpen){
             btn_alert.setText("关闭报警");
         }
         else {
             btn_alert.setText("打开报警");
-        }
+        }*/
+        /*if(MainActivity.isSendCloseAlert){
+            MainActivity.isSendCloseAlert=false;
+        }*/
     }
     @Override
     public void onStart() {
@@ -179,15 +191,18 @@ public class MonitorFragment extends Fragment{
     @Override
     public void onPause(){
         super.onPause();
-        if(MainActivity.receivedState!=BluetoothProtocol.NO_STATE){
+        /*if(MainActivity.receivedState!=BluetoothProtocol.NO_STATE){
             Message message4 = new Message();
             message4.what = 3;
             handler.sendMessage(message4);
-        }
+        }*/
         myStop();
     }
     @Override
     public void onStop() {
+        /*if(MainActivity.isSendCloseAlert){
+            MainActivity.isSendCloseAlert=false;
+        }*/
         super.onStop();
     }
     private BDLocationListener mListener = new BDLocationListener() {
@@ -291,31 +306,37 @@ public class MonitorFragment extends Fragment{
         n_valView=view.findViewById(R.id.id_n_val);
         cal=view.findViewById(R.id.calculate);
         start = (Button) view.findViewById(R.id.start);
+        //start.setBackgroundColor(Color.GREEN);
         btn_alert=view.findViewById(R.id.alert_close);
-        btn_spectrum=view.findViewById(R.id.get_spectrum);
-        wifiBg=(LinearLayout)view.findViewById(R.id.wifi_id);
+        //btn_spectrum=view.findViewById(R.id.get_spectrum);
         progressBar_r = (ProgressBar)view.findViewById(R.id.progress_r);
         progressBar_r.setProgress(0);
-        progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+        progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
         progressBar_n = (ProgressBar)view.findViewById(R.id.progress_n);
         progressBar_n.setProgress(0);
-        progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+        progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+        r_valViewMsg=view.findViewById(R.id.r_view_msg);
+        n_valViewMsg=view.findViewById(R.id.n_view_msg);
+        r_valViewMsg.setText("正常");
+        n_valViewMsg.setText("正常");
         start.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 try {
                     if(isStop) {
-                        MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
+                        //MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
                         /*if(MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE||
                                 MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS){
                             MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
                         }
                         else{
-                            MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
+                            startMeasure();
                         }*/
+                        startMeasure();
                     }else{
-                        stopTimer();
+                        //stopTimer();
+                        myStop();
                         //MainActivity.send(BluetoothProtocol.STOP_MEASURE,new byte[]{});
-                        timer = new Timer();
+                        /*timer = new Timer();
                         task = new TimerTask() {
                             @Override
                             public void run() {
@@ -325,7 +346,7 @@ public class MonitorFragment extends Fragment{
                                 handler.sendMessage(message);
                             }
                         };
-                        timer.schedule(task, 2000);
+                        timer.schedule(task, 500);*/
                         //stopTimer();
                         //start.setText("开始");
                     }
@@ -348,21 +369,47 @@ public class MonitorFragment extends Fragment{
         });
         btn_alert.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
+                /*if(MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE||
+                        MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS){
+                    MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
+                    isSendAlert=true;
+                }*/
                 if(MainActivity.isAlertOpen){
-                    if(MainActivity.alertState==BluetoothProtocol.ALERT_START){
+                    Log.i(TAG, "-------------------主动关闭---------------------------");
+                    if(isStop){
+                        mainActivity.stopTimer();
+                        mainActivity.startTimer(2);
+                    }
+                    else{
+                        isSendAlert=true;
+                    }
+                    /*MainActivity.stopTimer();
+                    MainActivity.startTimer(2);*/
+                    //startSendTimer(0);
+                    //MainActivity.send(BluetoothProtocol.ALERT_CLOSE,new byte[]{});
+                }
+                /*else{
+                    startSendTimer(1);
+                    //MainActivity.send(BluetoothProtocol.ALERT_OPEN,new byte[]{});
+                }*/
+                MainActivity.isAlertOpen=false;
+                /*if(MainActivity.isAlertOpen){
+                    *//*if(MainActivity.alertState==BluetoothProtocol.ALERT_START){
                         stopMusic();
                         stopViberate();
-                        mAlertOverlay.remove();
-                        //MainActivity.send(BluetoothProtocol.ALERT_CLOSE,new byte[]{});
-                    }
+                        if(mAlertOverlay!=null){
+                            mAlertOverlay.remove();
+                        }
+                    }*//*
+                    Log.i(TAG, "-------------------主动关闭---------------------------");
                     MainActivity.send(BluetoothProtocol.ALERT_CLOSE,new byte[]{});
                 }
                 else{
                     MainActivity.send(BluetoothProtocol.ALERT_OPEN,new byte[]{});
-                }
+                }*/
             }
         });
-        btn_spectrum.setOnClickListener(new View.OnClickListener(){
+        /*btn_spectrum.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 if(MainActivity.receivedState==BluetoothProtocol.NO_STATE||MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS_FAILED){
                     Toast.makeText(getActivity().getApplicationContext(), "未连接至背包，请点击开始按钮", Toast.LENGTH_LONG).show();
@@ -382,52 +429,26 @@ public class MonitorFragment extends Fragment{
                             handler.sendMessage(message);
                         }
                     };
-                    timer.schedule(task, 2000);
+                    timer.schedule(task, 500);
                 }
             }
-        });
+        });*/
         setTestMsg();
         initHistoryPoint();
-    }
-
-    public void notifyChangeWifi(boolean flag){
-        wifiFlag=flag;
-        timer = new Timer();
-        task = new TimerTask() {
-            @Override
-            public void run() {
-                // 需要做的事:发送消息
-                Message message = new Message();
-                message.what = 2;
-                handler.sendMessage(message);
-            }
-        };
-        timer.schedule(task, 0);
-    }
-
-    public void changeWifi(){
-        if(wifiFlag){
-            if(this.getContext()!=null){
-                wifiBg.setBackground(getResources().getDrawable(R.drawable.wifi_black));
-            }
-        }
-        else{
-            if(this.getContext()!=null){
-                wifiBg.setBackground(getResources().getDrawable(R.drawable.wifi_white));
-            }
-        }
     }
 
     private void startMusic(){
         try {
             Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-            mMediaPlayer = new MediaPlayer();
-            mMediaPlayer.setDataSource(getContext(), alert);
-            //final AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_RING);
-            mMediaPlayer.setLooping(true);
-            mMediaPlayer.prepare();
-            mMediaPlayer.start();
+            if(mMediaPlayer==null){
+                mMediaPlayer = new MediaPlayer();
+                mMediaPlayer.setDataSource(getContext(), alert);
+                //final AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+                mMediaPlayer.setAudioStreamType(AudioManager.STREAM_RING);
+                mMediaPlayer.setLooping(true);
+                mMediaPlayer.prepare();
+                mMediaPlayer.start();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -439,6 +460,8 @@ public class MonitorFragment extends Fragment{
                 this.mMediaPlayer.stop();
                 Log.d(TAG, "---------stop music-----------");
             }
+            mMediaPlayer.release();
+            mMediaPlayer=null;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -448,13 +471,17 @@ public class MonitorFragment extends Fragment{
      * 开启震动
      */
     private void startVibrate() {
-        if (vibrator == null) {
+        /*if (vibrator == null) {
             //获取震动服务
             vibrator = (Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE);
         }
         //震动模式隔1秒震动1.4秒
         long[] pattern = { 1000, 1400 };
         //震动重复，从数组的0开始（-1表示不重复）
+        vibrator.vibrate(pattern, 0);*/
+
+        vibrator = (Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+        long[] pattern = {100, 200, 100, 200}; // 100ms后开始震动200ms，然后再停止100ms，再震动200ms
         vibrator.vibrate(pattern, 0);
     }
 
@@ -470,62 +497,12 @@ public class MonitorFragment extends Fragment{
      * @description: 启动计时器，发送数据
      * @author: lyj
      * @create: 2019/10/14
-     **/
+     **//*
     private void startTimer() {
         if(timer == null) {
             timer = new Timer();
         }
         task=null;
-        /*switch (msg){
-            case BluetoothProtocol.SHAKE_HANDS:
-                task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 需要做的事:发送消息
-                        Message message = new Message();
-                        message.what = 2;
-                        handler.sendMessage(message);
-                    }
-                };
-                timer.schedule(task, 0,2500);
-                break;
-            case BluetoothProtocol.START_MEASURE:
-                task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 需要做的事:发送消息
-                        Message message = new Message();
-                        message.what = 3;
-                        handler.sendMessage(message);
-                    }
-                };
-                timer.schedule(task, 0,2500);
-                break;
-            case BluetoothProtocol.GET_DATA:
-                task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 需要做的事:发送消息
-                        Message message = new Message();
-                        message.what = 4;
-                        handler.sendMessage(message);
-                    }
-                };
-                timer.schedule(task, 0,2000);
-                break;
-            case BluetoothProtocol.STOP_MEASURE:
-                task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        // 需要做的事:发送消息
-                        Message message = new Message();
-                        message.what = 5;
-                        handler.sendMessage(message);
-                    }
-                };
-                timer.schedule(task, 0,2500);
-                break;
-        }*/
         task = new TimerTask() {
             @Override
             public void run() {
@@ -535,15 +512,15 @@ public class MonitorFragment extends Fragment{
                 handler.sendMessage(message);
             }
         };
-        timer.schedule(task, 0,2000);
+        timer.schedule(task, 0,1000);
         Log.d(TAG, "---------start timer-----------");
     }
 
-    /**
+    *//**
      * @description: 关闭计时器
      * @author: lyj
      * @create: 2019/10/14
-     **/
+     **//*
     private void stopTimer() {
         if(timer != null) {
             timer.cancel();
@@ -554,13 +531,69 @@ public class MonitorFragment extends Fragment{
             task.cancel();
             task = null;
         }
-    }
+    }*/
 
     /**
+     * @description: 启动计时器，发送数据
+     * @author: lyj
+     * @create: 2019/12/13
+     **/
+    /*private void startSendTimer(int msg) {
+        if(sendTimer == null) {
+            sendTimer = new Timer();
+        }
+        sendTask=null;
+        switch (msg){
+            case 0: //打开报警
+                sendTask = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 5;
+                        handler.sendMessage(message);
+                    }
+                };
+                sendTimer.schedule(sendTask, 0,1000);
+                break;
+            case 1:
+                sendTask = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 6;
+                        handler.sendMessage(message);
+                    }
+                };
+                sendTimer.schedule(sendTask, 0,1000);
+                break;
+
+        }
+    }
+
+    *//**
+     * @description: 关闭计时器
+     * @author: lyj
+     * @create: 2019/12/13
+     **//*
+    private void stopSendTimer() {
+        if(sendTimer != null) {
+            sendTimer.cancel();
+            sendTimer = null;
+        }
+
+        if(sendTask != null) {
+            sendTask.cancel();
+            sendTask = null;
+        }
+    }
+
+    *//**
      * @description: handler,蓝牙协议核心
      * @author: lyj
      * @create: 2019/11/12
-     **/
+     **//*
     Handler handler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what){
@@ -568,7 +601,6 @@ public class MonitorFragment extends Fragment{
                     MainActivity.send(BluetoothProtocol.GET_DATA,new byte[]{});
                     break;
                 case 2:
-                    changeWifi();
                     break;
                 case 3:
                     MainActivity.send(BluetoothProtocol.STOP_MEASURE,new byte[]{});
@@ -576,10 +608,25 @@ public class MonitorFragment extends Fragment{
                 case 4:
                     MainActivity.send(BluetoothProtocol.GET_SPECTRUM,new byte[]{});
                     break;
+                case 5:
+                    MainActivity.send(BluetoothProtocol.ALERT_CLOSE,new byte[]{});
+                    break;
+                case 6:
+                    MainActivity.send(BluetoothProtocol.ALERT_OPEN,new byte[]{});
+                    break;
             }
             super.handleMessage(msg);
         }
-    };
+    };*/
+
+    //开启测量
+    public void startMeasure(){
+        start.setText("停止");
+        isStop = !isStop;
+        DataHelperUtils.saveDataTotalMsg();
+        mainActivity.stopTimer();
+        mainActivity.startTimer(3);
+    }
 
     /**
      * @description: 处理接受数据
@@ -588,23 +635,49 @@ public class MonitorFragment extends Fragment{
      **/
     public void handlerReceivedData(String Type,int[] data){
         switch (Type){
-            case BluetoothProtocol.SHAKE_HANDS_OK:
-                MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
+            /*case BluetoothProtocol.SHAKE_HANDS_OK:
+                //MainActivity.send(BluetoothProtocol.START_MEASURE,new byte[]{});
+                *//*start.setText("停止");
+                //start.setBackgroundColor(Color.RED);
+                isStop = !isStop;
+                DataHelperUtils.saveDataTotalMsg();
+                startTimer();*//*
+                if(isSendAlert){
+                    if(MainActivity.isAlertOpen){
+                        Log.i(TAG, "-------------------主动关闭---------------------------");
+                        startSendTimer(0);
+                    }
+                    else{
+                        startSendTimer(1);
+                    }
+                    isSendAlert=false;
+                }
+                else{
+                    startMeasure();
+                }
+                //startMeasure();
                 break;
             case BluetoothProtocol.SHAKE_HANDS_FAILED:
                 Toast.makeText(getActivity().getApplicationContext(), "握手失败", Toast.LENGTH_LONG).show();
-                break;
-            case BluetoothProtocol.START_MEASURE_OK:
+                break;*/
+            /*case BluetoothProtocol.START_MEASURE_OK:
                 start.setText("停止");
+                start.setBackgroundColor(Color.RED);
                 isStop = !isStop;
                 DataHelperUtils.saveDataTotalMsg();
                 startTimer();
                 break;
             case BluetoothProtocol.START_MEASURE_FAILED:
                 Toast.makeText(getActivity().getApplicationContext(), "启动测量失败", Toast.LENGTH_LONG).show();
-                break;
+                break;*/
             case BluetoothProtocol.GET_DATA:
                 //DataHelperUtils.saveDataTotalMsg();
+                if(isSendAlert){
+                    isSendAlert=false;
+                    mainActivity.stopTimer();
+                    Log.i(TAG, "-------------------get data------------");
+                    mainActivity.startTimer(2);
+                }
                 UpdateUI(data);
                 break;
             case BluetoothProtocol.STOP_MEASURE_OK:
@@ -613,22 +686,42 @@ public class MonitorFragment extends Fragment{
                 break;
             case BluetoothProtocol.STOP_MEASURE_FAILED:
                 Toast.makeText(getActivity().getApplicationContext(), "停止测量失败", Toast.LENGTH_LONG).show();
-                startTimer();
+                //startTimer();
                 break;
             case BluetoothProtocol.ALERT_START:
-                setAlert(data[2]);
+                setAlert(data);
                 break;
             case BluetoothProtocol.ALERT_CLOSE_OK:
                 Toast.makeText(getActivity().getApplicationContext(), "关闭报警成功", Toast.LENGTH_LONG).show();
                 MainActivity.alertState=BluetoothProtocol.NO_STATE;
-                MainActivity.isAlertOpen=!MainActivity.isAlertOpen;
-                btn_alert.setText("打开报警");
+                mainActivity.stopTimer();
+                stopMusic();
+                stopViberate();
+                /*if(mAlertOverlay!=null){
+                    mAlertOverlay.remove();
+                }*/
+                if(!isStop){
+                    startMeasure();
+                }
+                /*stopSendTimer();
+                MainActivity.alertState=BluetoothProtocol.NO_STATE;
+                if(MainActivity.isAlertOpen){
+                    MainActivity.isAlertOpen=false;
+                    stopMusic();
+                    stopViberate();
+                    if(mAlertOverlay!=null){
+                        mAlertOverlay.remove();
+                    }
+                }
+                //MainActivity.isAlertOpen=!MainActivity.isAlertOpen;
+                btn_alert.setText("打开报警");*/
                 break;
             case BluetoothProtocol.ALERT_CLOSE_FAILED:
                 Toast.makeText(getActivity().getApplicationContext(), "关闭报警失败，请重新关闭", Toast.LENGTH_LONG).show();
                 MainActivity.alertState=BluetoothProtocol.ALERT_START;
                 break;
-            case BluetoothProtocol.ALERT_OPEN_OK:
+            /*case BluetoothProtocol.ALERT_OPEN_OK:
+                stopSendTimer();
                 Toast.makeText(getActivity().getApplicationContext(), "打开报警成功", Toast.LENGTH_LONG).show();
                 MainActivity.alertState=BluetoothProtocol.NO_STATE;
                 MainActivity.isAlertOpen=!MainActivity.isAlertOpen;
@@ -637,7 +730,7 @@ public class MonitorFragment extends Fragment{
             case BluetoothProtocol.ALERT_OPEN_FAILED:
                 Toast.makeText(getActivity().getApplicationContext(), "打开报警失败，请重新打开", Toast.LENGTH_LONG).show();
                 MainActivity.alertState=BluetoothProtocol.ALERT_OPEN;
-                break;
+                break;*/
             /*case BluetoothProtocol.GET_SPECTRUM:
                 MainActivity.getSpectrum=BluetoothProtocol.NO_STATE;
                 handlerSpectrumData(data);
@@ -646,43 +739,15 @@ public class MonitorFragment extends Fragment{
 
     }
 
-    private void setAlert(int type) {
-        startMusic();
+    private void setAlert(int[] data) {
+        isAlert=true;
+        if(!MainActivity.isAlertOpen){
+            return;
+        }
+        if(MainActivity.isAlertMusic){
+            startMusic();
+        }
         startVibrate();
-        String text="";
-        switch (type){
-            case 0:
-                text="NaI高本底报警!!!";
-                break;
-            case 1:
-                text="GM高本底报警!!!";
-                break;
-            case 2:
-                text="中子高本底报警!!!";
-                break;
-            case 3:
-                text="NaI低本底报警!!!";
-                break;
-            case 4:
-                text="GM低本底报警!!!";
-                break;
-            case 5:
-                text="中子低本底报警!!!";
-                break;
-        }
-        LatLng llText = new LatLng(MainActivity.latitude, MainActivity.longitude);
-        OverlayOptions mTextOptions = new TextOptions()
-                .text(text) //文字内容
-                .bgColor(0xAAFFFF00) //背景色
-                .fontSize(48) //字号
-                .fontColor(0xFFFF00FF) //文字颜色
-                .rotate(-30) //旋转角度
-                .position(llText);
-        //在地图上显示文字覆盖物
-        if(mAlertOverlay!=null){
-            mAlertOverlay.remove();
-        }
-        mAlertOverlay = mBaiduMap.addOverlay(mTextOptions);
     }
 
     /**
@@ -691,50 +756,281 @@ public class MonitorFragment extends Fragment{
      * @create: 2019/10/14
      **/
     public void UpdateUI(int[] data){
-        if(MainActivity.valType==0){
+        //在地图上显示文字覆盖物
+        if(mAlertOverlay!=null){
+            mAlertOverlay.remove();
+        }
+        if(mAlertOverlayMsg!=null){
+            mAlertOverlayMsg.remove();
+        }
+        String text="";
+        int[] type=BluetoothProtocol.getTypeArrayByTwo(BluetoothProtocol.getVal(data,18,19));
+        if(type[0]==1){
+            text+="U235,";
+        }
+        if(type[1]==1){
+            text+="Pu,";
+        }
+        if(type[2]==1){
+            text+="U238,";
+        }
+        if(type[3]==1){
+            text+="Th232,";
+        }
+        if(type[4]==1){
+            text+="K40,";
+        }
+        if(type[5]==1){
+            text+="Tl201,";
+        }
+        if(type[6]==1){
+            text+="I131,";
+        }
+        if(type[7]==1){
+            text+="Ga67,";
+        }
+        if(type[8]==1){
+            text+="Tl204,";
+        }
+        if(type[9]==1){
+            text+="Ra236,";
+        }
+        if(type[10]==1){
+            text+="Ir162,";
+        }
+        if(type[11]==1){
+            text+="Ba133,";
+        }
+        if(type[12]==1){
+            text+="Cs137,";
+        }
+        if(type[13]==1){
+            text+="Co57,";
+        }
+        if(type[14]==1){
+            text+="Co60,";
+        }
+        if(type[15]==1){
+            text+="Am241,";
+        }
+        if(!text.equals("")){
+            Log.i(TAG, "长度是！！！！！！: " + text.length());
+            text=text.substring(0,text.length()-1);
+            LatLng llText = new LatLng(MainActivity.latitude+0.00005, MainActivity.longitude);
+            OverlayOptions mTextOptions = new TextOptions()
+                    .text(text) //文字内容
+                    .bgColor(0xAAFFFF00) //背景色
+                    .fontSize(48) //字号
+                    .fontColor(0xFFFF00FF) //文字颜色
+                    .rotate(0) //旋转角度
+                    .position(llText);
+            mAlertOverlay = mBaiduMap.addOverlay(mTextOptions);
+        }
+        String msg="";
+        switch (data[22]){
+            case 0:
+                msg="";
+                break;
+            case 1:
+                msg="高本底报警";
+                //progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                break;
+            case 2:
+                msg="低本底故障";
+                break;
+
+        }
+
+        if(!msg.equals("")){
+            LatLng llText1 = new LatLng(MainActivity.latitude-0.00005, MainActivity.longitude);
+            OverlayOptions mTextOptions1 = new TextOptions()
+                    .text(msg) //文字内容
+                    .bgColor(0xAAFFFF00) //背景色
+                    .fontSize(48) //字号
+                    .fontColor(0xFFFF00FF) //文字颜色
+                    .rotate(0) //旋转角度
+                    .position(llText1);
+            mAlertOverlayMsg = mBaiduMap.addOverlay(mTextOptions1);
+        }
+        switch (data[24]){
+            case 0:
+                n_valViewMsg.setText("正常");
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+                break;
+            case 1:
+                n_valViewMsg.setText("轻微报警");
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                DataHelperUtils.saveLogMsg("报警","警告时间");
+                break;
+            case 2:
+                n_valViewMsg.setText("中度报警");
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                DataHelperUtils.saveLogMsg("报警","警告时间");
+                break;
+            case 3:
+                n_valViewMsg.setText("严重报警");
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                DataHelperUtils.saveLogMsg("报警","警告时间");
+                break;
+        }
+        if(MainActivity.valType==1){
+            switch (data[23]){
+                case 0:
+                    r_valViewMsg.setText("正常");
+                    progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+                    break;
+                case 1:
+                    r_valViewMsg.setText("轻微报警");
+                    progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    break;
+                case 2:
+                    r_valViewMsg.setText("中度报警");
+                    progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    break;
+                case 3:
+                    r_valViewMsg.setText("严重报警");
+                    progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    break;
+            }
             int r_val=BluetoothProtocol.getVal(data,2,3);
-            int n_val=BluetoothProtocol.getVal(data,10,11);
-            measureVal_r=String.valueOf(r_val);
+            int n_val=BluetoothProtocol.getVal(data,14,15);
+            measureVal_r=String.valueOf(r_val)+"CPS";
             measureVal_n=String.valueOf(n_val);
             r_valView.setText(measureVal_r);
             n_valView.setText(measureVal_n);
-            if(r_val>MainActivity.alert_r_jishu){
-                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                DataHelperUtils.saveLogMsg("报警","警告时间");
-                isAlert=true;
+            if(r_val==0){
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+                //MainActivity.isAlertOpen=true;
+                //MainActivity.isSendCloseAlert=false;
+
             }
-            if(n_val>MainActivity.alert_n_jishu){
-                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                DataHelperUtils.saveLogMsg("报警","警告时间");
-                isAlert=true;
+            if(n_val==0){
+                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
             }
-            progressBar_r.setProgress((int) ((r_val+0.1)/MainActivity.total_r_jishu*100));
-            progressBar_n.setProgress((int) ((n_val+0.1)/MainActivity.total_n_jishu*100));
+            /*if(r_val>MainActivity.alert_r_jishu){
+                //progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                //r_valViewMsg.setText("报警");
+                DataHelperUtils.saveLogMsg("报警","警告时间");
+                //isNomalOnce=true;
+            }
+            else if(r_val==0){
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+                //MainActivity.isAlertOpen=true;
+                //MainActivity.isSendCloseAlert=false;
+
+            }
+            else{
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+                *//*MainActivity.isAlertOpen=true;
+                if(isNomalOnce){
+                    MainActivity.isSendCloseAlert=false;
+                    isNomalOnce=false;
+                }*//*
+            }*/
+            /*if(n_val>MainActivity.alert_n_jishu){
+                //progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                //n_valViewMsg.setText("报警");
+                DataHelperUtils.saveLogMsg("报警","警告时间");
+                //isAlert=true;
+            }
+            else if(n_val==0){
+                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+            }
+            else{
+                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+            }*/
+            progressBar_r.setProgress((int) ((r_val+0.1)/MainActivity.total_r_jishu*80+20));
+            progressBar_n.setProgress((int) ((n_val+0.1)/MainActivity.total_n_jishu*80+20));
             if(isAlert){
                 DataHelperUtils.updateDataTotalMsgIsAlarm();
             }
             MainActivity.nowValue=r_val;
             DataHelperUtils.saveDataMsg(String.valueOf(r_val),longitude,latitude,0,isAlert);
         }
-        else if(MainActivity.valType==1){
-            int r_val=BluetoothProtocol.getVal(data,4,5);
-            int n_val=BluetoothProtocol.getVal(data,12,13);
-            measureVal_r=String.valueOf(r_val);
+        else if(MainActivity.valType==2){
+            switch (data[25]){
+                case 0:
+                    r_valViewMsg.setText("正常");
+                    progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+                    break;
+                case 1:
+                    r_valViewMsg.setText("轻微报警");
+                    progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    break;
+                case 2:
+                    r_valViewMsg.setText("中度报警");
+                    progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    break;
+                case 3:
+                    r_valViewMsg.setText("严重报警");
+                    progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    break;
+            }
+            int r_val=BluetoothProtocol.getVal(data,4,7);
+            int n_val=BluetoothProtocol.getVal(data,14,15);
+            if(r_val<1000){
+                measureVal_r=String.valueOf(r_val)+"v";
+            }
+            else if(r_val<1000000){
+                double n=1000;
+                measureVal_r=String.valueOf(r_val/n)+"msv";
+            }
+            else{
+                double n=1000;
+                measureVal_r=String.valueOf(r_val/n)+"sv";
+            }
             measureVal_n=String.valueOf(n_val);
             r_valView.setText(measureVal_r);
             n_valView.setText(measureVal_n);
-            if(r_val>MainActivity.alert_r_jiliang){
-                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+            if(r_val==0){
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+                //MainActivity.isAlertOpen=true;
+                //MainActivity.isSendCloseAlert=false;
+
+            }
+            if(n_val==0){
+                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+            }
+            /*if(r_val>MainActivity.alert_r_jiliang){
+                //progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                //r_valViewMsg.setText("报警");
                 DataHelperUtils.saveLogMsg("报警","警告时间");
-                isAlert=true;
+                //isAlert=true;
+                //isNomalOnce=true;
+            }
+            else if(r_val==0){
+                //MainActivity.isAlertOpen=true;
+                //MainActivity.isSendCloseAlert=false;
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+            }
+            else{
+                progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+               *//* MainActivity.isAlertOpen=true;
+                if(isNomalOnce){
+                    MainActivity.isSendCloseAlert=false;
+                    isNomalOnce=false;
+                }*//*
             }
             if(n_val>MainActivity.alert_n_jiliang){
-                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                //progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                //n_valViewMsg.setText("报警");
                 DataHelperUtils.saveLogMsg("报警","警告时间");
-                isAlert=true;
+                //isAlert=true;
             }
-            progressBar_r.setProgress((int) ((r_val+0.1)/MainActivity.total_r_jiliang*100));
-            progressBar_n.setProgress((int) ((n_val+0.1)/MainActivity.total_n_jiliang*100));
+            else if(n_val==0){
+                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+            }
+            else{
+                progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+            }*/
+            progressBar_r.setProgress((int) ((r_val+0.1)/MainActivity.total_r_jiliang*80+20));
+            progressBar_n.setProgress((int) ((n_val+0.1)/MainActivity.total_n_jiliang*80+20));
             if(isAlert){
                 DataHelperUtils.updateDataTotalMsgIsAlarm();
             }
@@ -750,84 +1046,23 @@ public class MonitorFragment extends Fragment{
      **/
     public void myStop(){
         start.setText("开始");
+        //start.setBackgroundColor(Color.GREEN);
         isStop=true;
-        r_valView.setText("未测试");
+        r_valView.setText("0");
         r_valView.setBackgroundColor(Color.WHITE);
-        n_valView.setText("未测试");
+        n_valView.setText("0");
         n_valView.setBackgroundColor(Color.WHITE);
         progressBar_r.setProgress(0);
-        progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
+        progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+        r_valViewMsg.setText("正常");
         progressBar_n.setProgress(0);
-        progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
-        stopTimer();
+        progressBar_n.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_init));
+        n_valViewMsg.setText("正常");
+        mainActivity.stopTimer();
         DataHelperUtils.dataTotalMsg_IsAlarm_Now=false;
         DataHelperUtils.updateDataTotalMsgTime();
     }
 
-    /**
-     * @description: 处理接受数据
-     * @author: lyj
-     * @create: 2019/11/12
-     **/
-    public void handlerReceivedData1(int[] data){
-        for(int d:data){
-            Log.d(TAG, "收到的数据！！！！！！！！！" + d);
-        }
-        switch (MainActivity.connectedState){
-            case 1:
-                if(data.length!=2){
-                    Toast.makeText(getActivity().getApplicationContext(), "接受数据错误！与背包连接错误！", Toast.LENGTH_LONG).show();
-                }
-                else {
-                    if(data[0]==0x3A&&data[1]==0x32){
-                        Toast.makeText(getActivity().getApplicationContext(), "与背包连接成功", Toast.LENGTH_LONG).show();
-                        MainActivity.connectedState=3;
-                        start.setText("停止");
-                        isStop=false;
-                        startTimer();
-                        DataHelperUtils.saveDataTotalMsg();
-                    }
-                    else{
-                        Toast.makeText(getActivity().getApplicationContext(), "与背包连接失败", Toast.LENGTH_LONG).show();
-                    }
-                }
-                break;
-            case 2:
-                if(data.length!=2){
-                    Toast.makeText(getActivity().getApplicationContext(), "接受数据错误！与背包连接错误！", Toast.LENGTH_LONG).show();
-                }
-                else{
-                    if(data[0]==0x3A&&data[1]==0x31){
-                        Toast.makeText(getActivity().getApplicationContext(), "复位启动成功", Toast.LENGTH_LONG).show();
-                        MainActivity.connectedState=3;
-                        start.setText("停止");
-                        isStop=false;
-                        startTimer();
-                    }
-                    else{
-                        Toast.makeText(getActivity().getApplicationContext(), "复位启动失败", Toast.LENGTH_LONG).show();
-                    }
-                }
-                break;
-            case 3:
-                //UpdateUI1(data);
-                break;
-            case 4:
-                if(data.length!=2){
-                    Toast.makeText(getActivity().getApplicationContext(), "接受数据错误！与背包连接错误！", Toast.LENGTH_LONG).show();
-                }
-                else {
-                    if(data[0]==0x3A&&data[1]==0x31){
-                        Toast.makeText(getActivity().getApplicationContext(), "停止成功", Toast.LENGTH_LONG).show();
-                        myStop();
-                    }
-                    else{
-                        Toast.makeText(getActivity().getApplicationContext(), "停止失败", Toast.LENGTH_LONG).show();
-                    }
-                }
-                break;
-        }
-    }
     /**
      * @description:获取辐射值
      * @author: lyj
@@ -1000,13 +1235,15 @@ public class MonitorFragment extends Fragment{
                 pointStart();
             }
         }*/
-        startValue=MainActivity.nowValue;
-        if(startValue!=0){
-            Toast.makeText(getActivity().getApplicationContext(), String.valueOf(startValue), Toast.LENGTH_LONG).show();
-            MainActivity.startLongitude=longitude;
-            MainActivity.startLatitude=latitude;
-            flag=1;
-            pointStart();
+        if(MainActivity.openNavi){
+            startValue=MainActivity.nowValue;
+            if(startValue!=0){
+                Toast.makeText(getActivity().getApplicationContext(), String.valueOf(startValue), Toast.LENGTH_LONG).show();
+                MainActivity.startLongitude=longitude;
+                MainActivity.startLatitude=latitude;
+                flag=1;
+                pointStart();
+            }
         }
     }
 

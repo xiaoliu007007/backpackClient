@@ -15,7 +15,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="4"
             android:gravity="center"
-            android:text="r辐射值"
+            android:text="测量值(r)"
             android:textStyle="bold" />
         <ProgressBar
             android:id="@+id/progress_r"
@@ -24,7 +24,7 @@
             android:layout_height="20dp"
             android:layout_gravity="center"
             android:layout_alignLeft="@id/id_r_view"
-            android:layout_marginLeft="100dp"
+            android:layout_marginLeft="70dp"
             android:max="100"
             android:progress="10"
             />
@@ -34,9 +34,20 @@
             android:layout_height="wrap_content"
             android:layout_weight="4"
             android:layout_alignLeft="@id/id_r_view"
-            android:layout_marginLeft="200dp"
+            android:layout_marginLeft="160dp"
             android:gravity="center"
-            android:text="未预测"
+            android:text="0"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/r_view_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/id_r_val"
+            android:layout_marginLeft="120dp"
+            android:layout_weight="4"
+            android:gravity="center"
+            android:text="正常"
             android:textStyle="bold" />
     </RelativeLayout>
     <RelativeLayout
@@ -52,7 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="4"
             android:gravity="center"
-            android:text="n辐射值"
+            android:text="测量值(n)"
             android:textStyle="bold" />
         <ProgressBar
             android:id="@+id/progress_n"
@@ -61,19 +72,31 @@
             android:layout_height="20dp"
             android:layout_gravity="center"
             android:layout_alignLeft="@id/id_n_view"
-            android:layout_marginLeft="100dp"
+            android:layout_marginLeft="70dp"
             android:max="100"
             android:progress="10"
             />
+
         <TextView
             android:id="@+id/id_n_val"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="4"
             android:layout_alignLeft="@id/id_n_view"
-            android:layout_marginLeft="200dp"
+            android:layout_marginLeft="160dp"
+            android:layout_weight="4"
             android:gravity="center"
-            android:text="未预测"
+            android:text="0"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/n_view_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/id_n_val"
+            android:layout_marginLeft="120dp"
+            android:layout_weight="4"
+            android:gravity="center"
+            android:text="正常"
             android:textStyle="bold" />
     </RelativeLayout>
 
@@ -97,13 +120,23 @@
         android:layout_alignParentBottom="true"
         android:background="@drawable/bt_tag_bg"
         android:orientation="horizontal">
+
         <Button
             android:id="@+id/start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_weight="1"
-            android:text="开始" />
+            android:text="开始"/>
+
+        <Button
+            android:id="@+id/get_navi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_weight="1"
+            android:text="导航"
+            />
 
         <Button
             android:id="@+id/calculate"
@@ -111,7 +144,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_weight="1"
-            android:text="巡测" />
+            android:text="预测"/>
 
         <Button
             android:id="@+id/alert_close"
@@ -119,23 +152,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_weight="1"
-            android:text="关闭报警" />
-
-        <Button
-            android:id="@+id/get_spectrum"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_weight="1"
-            android:text="获取能谱" />
-
-        <LinearLayout
-            android:id="@+id/wifi_id"
-            android:layout_width="50dp"
-            android:layout_height="40dp"
-            android:background="@drawable/wifi_white"
-            android:orientation="horizontal">
-            </LinearLayout>
+            android:text="确认报警"/>
     </LinearLayout>
 
 </RelativeLayout>

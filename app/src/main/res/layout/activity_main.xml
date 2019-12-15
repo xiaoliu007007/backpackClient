@@ -45,7 +45,7 @@
                 android:button="@null"
                 android:clickable="true"
                 android:drawablePadding="2dp"
-                android:drawableTop="@drawable/x_nav_menu_sy"
+                android:drawableTop="@drawable/x_nav_menu_gw"
                 android:gravity="center"
                 android:onClick="switchView"
                 android:text="巡测"
@@ -62,7 +62,7 @@
                 android:button="@null"
                 android:clickable="true"
                 android:drawablePadding="2dp"
-                android:drawableTop="@drawable/x_nav_menu_gw"
+                android:drawableTop="@drawable/x_nav_menu_sy"
                 android:gravity="center"
                 android:onClick="switchView"
                 android:text="蓝牙连接"
@@ -117,6 +117,23 @@
                 android:gravity="center"
                 android:onClick="switchView"
                 android:text="日志"
+                android:textColor="@drawable/x_nav_menu_color"
+                android:textSize="10sp" />
+
+            <RadioButton
+                android:id="@+id/id_nav_bt_spectrum"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:background="@color/transparent"
+                android:button="@null"
+                android:clickable="true"
+                android:drawablePadding="2dp"
+                android:drawableTop="@drawable/x_nav_menu_gw"
+                android:gravity="center"
+                android:onClick="switchView"
+                android:text="能谱采集"
                 android:textColor="@drawable/x_nav_menu_color"
                 android:textSize="10sp" />
         </RadioGroup>
