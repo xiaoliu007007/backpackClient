@@ -149,9 +149,11 @@ public class SettingFragment extends Fragment{
                 switch (i){
                     case R.id.collect_shu:
                         MainActivity.valType=1;
+                        sendReadingDete();
                         break;
                     case R.id.collect_liang:
                         MainActivity.valType=2;
+                        sendReadingDete();
                         break;
                 }
             }

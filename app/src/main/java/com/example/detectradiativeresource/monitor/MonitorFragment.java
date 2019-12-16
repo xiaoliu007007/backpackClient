@@ -103,6 +103,7 @@ public class MonitorFragment extends Fragment{
     private String measureVal_n;
     private boolean wifiFlag;//蓝牙是否连接
     private boolean isSendAlert=false;//是否发送过报警事件
+    private boolean isSendAutoAlertByPlace=false;//区域报警标志
     private MainActivity mainActivity;
     //private boolean isAlertOpen = true; //是否是打开报警状态
 
@@ -479,7 +480,7 @@ public class MonitorFragment extends Fragment{
         long[] pattern = { 1000, 1400 };
         //震动重复，从数组的0开始（-1表示不重复）
         vibrator.vibrate(pattern, 0);*/
-
+        //Log.i(TAG, "-------------------震动------------");
         vibrator = (Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE);
         long[] pattern = {100, 200, 100, 200}; // 100ms后开始震动200ms，然后再停止100ms，再震动200ms
         vibrator.vibrate(pattern, 0);
@@ -675,12 +676,19 @@ public class MonitorFragment extends Fragment{
                 //报警转正常自动关闭报警
                 if(MainActivity.alertState==BluetoothProtocol.ALERT_START&&((MainActivity.valType==1&&data[23]==0)||(MainActivity.valType==2&&data[25]==0))){
                     MainActivity.isAlertOpen=false;
-                    isSendAlert=true;
+                    Log.i(TAG, "-------------------正常区域关报警------------");
+                    //isSendAlert=true;
+                    isSendAlert=false;
+                    isSendAutoAlertByPlace=true;
+                }
+                if(isSendAutoAlertByPlace){
+                    isSendAutoAlertByPlace=false;
+                    mainActivity.stopTimer();
+                    mainActivity.startTimer(4);
                 }
                 if(isSendAlert){
                     isSendAlert=false;
                     mainActivity.stopTimer();
-                    Log.i(TAG, "-------------------get data------------");
                     mainActivity.startTimer(2);
                 }
                 UpdateUI(data);
@@ -999,17 +1007,19 @@ public class MonitorFragment extends Fragment{
                     break;
             }
             int r_val=BluetoothProtocol.getVal(data,4,7);
+            double m=100;
+            double r_val_d=(double)r_val/m;
             int n_val=BluetoothProtocol.getVal(data,14,15);
-            if(r_val<1000){
-                measureVal_r=String.valueOf(r_val)+" v";
+            if(r_val_d<1000){
+                measureVal_r=String.valueOf(r_val_d)+" v";
             }
-            else if(r_val<1000000){
+            else if(r_val_d<1000000){
                 double n=1000;
-                measureVal_r=String.valueOf(r_val/n)+" msv";
+                measureVal_r=String.valueOf(r_val_d/n)+" msv";
             }
             else{
                 double n=1000;
-                measureVal_r=String.valueOf(r_val/n)+" sv";
+                measureVal_r=String.valueOf(r_val_d/n)+" sv";
             }
             measureVal_n=String.valueOf(n_val);
             r_valView.setText(measureVal_r);

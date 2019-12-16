@@ -387,7 +387,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
         view=inflater.inflate(R.layout.fragment_bluetooth, null);
         bluetoothMsg=view.findViewById(R.id.id_bluetooth_msg);
 
-        mNavGroup = findViewById(R.id.id_navcontent);
+        mNavGroup = (RadioGroup)findViewById(R.id.id_navcontent);
         monitorFragemnt = MonitorFragment.getNewInstance();
         bluetoothFragment = BluetoothFragment.getNewInstance();
         dataTotalFragment = DataTotalFragment.getNewInstance();
@@ -396,8 +396,8 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
         logFragment = LogFragment.getNewInstance();
         logDetailFragment= LogDetailFragment.getNewInstance();
         spectrumFragment= SpectrumFragment.getNewInstance();
-        mFlLifeRoot=findViewById(R.id.id_fragment_content);
-        bluetoothBtn=findViewById(R.id.id_nav_bt_bluetooth);
+        mFlLifeRoot=(FrameLayout)findViewById(R.id.id_fragment_content);
+        bluetoothBtn=(RadioButton)findViewById(R.id.id_nav_bt_bluetooth);
         //显示
         mTransaction = getSupportFragmentManager().beginTransaction();
         mTransaction.replace(R.id.id_fragment_content, monitorFragemnt);
@@ -665,7 +665,12 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 Log.i(TAG, "收到报警" +getTime());
                 break;
             case BluetoothProtocol.ALERT_CLOSE:
-                byte[] send_alert_close={0x68,0x42,0x01,0x0D,0x0A};
+                byte[] send_alert_close=new byte[5];
+                send_alert_close[0]=0x68;
+                send_alert_close[1]=0x42;
+                send_alert_close[2]=data[0];
+                send_alert_close[3]=0x0D;
+                send_alert_close[4]=0x0A;
                 mBluetoothLeService.writeData(send_alert_close);
                 alertState=BluetoothProtocol.ALERT_CLOSE;
                 /*if(!MainActivity.isSendCloseAlert){
@@ -855,6 +860,9 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 break;*/
             case BluetoothProtocol.GET_DATA:
                 if(data.length==29){
+                    Log.i(TAG, "---------isAlertOpen is "+isAlertOpen);
+                    Log.i(TAG, "---------isSendCloseAlert is "+isSendCloseAlert);
+                    Log.i(TAG, "---------isNoAlert is "+isNoAlert);
                     flag=true;
                     monitor.handlerReceivedData(receivedState,data);
                     if(valType==1&&data[23]!=0){
@@ -868,8 +876,11 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     }*/
                     else{
                         isAlertOpen=true;
+                        if(isSendCloseAlert){
+                            isNoAlert=true;
+                            stopAlertTimer();
+                        }
                         isSendCloseAlert=false;
-                        isNoAlert=true;
                     }
                     return;
                 }
@@ -1095,13 +1106,19 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
      **/
     public static void setAutoFlagToTrue(){
         if(receivedState==BluetoothProtocol.SHAKE_HANDS_OK||receivedState==BluetoothProtocol.GET_DATA){
-            //Log.i(TAG, "-------------------receivedState is "+receivedState);
+            Log.i(TAG, "-------------------receivedState is "+receivedState);
             autoFlag=true;
         }
     }
 
     public void handlerAlert(int[] data){
+        if(!isAlertOpen){
+            return;
+        }
         alertState=BluetoothProtocol.ALERT_START;
+        MonitorFragment monitor =
+                (MonitorFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
+        monitor.handlerReceivedData(BluetoothProtocol.ALERT_START,data);
         if(!MainActivity.isSendCloseAlert){
             Log.i(TAG, "-------------------自动关闭开始------------");
             timer = new Timer();
@@ -1116,6 +1133,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
             };
             timer.schedule(task, MainActivity.closeAlertTime*1000);
             MainActivity.isSendCloseAlert=true;
+            isNoAlert=false;
         }
     }
 
@@ -1126,7 +1144,8 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     if(isAlertOpen&&!isNoAlert){
                         Log.i(TAG, "----------------自动关闭报警----------------" );
                         stopTimer();
-                        startTimer(2);
+                        //startTimer(2);
+                        startTimer(4);
                         isNoAlert=false;
                     }
                     MainActivity.isAlertOpen=false;
@@ -1143,10 +1162,17 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
                     break;
                 case 2:
-                    MainActivity.send(BluetoothProtocol.ALERT_CLOSE,new byte[]{});
+                    //主动关
+                    byte[] data={0x01};
+                    MainActivity.send(BluetoothProtocol.ALERT_CLOSE,data);
                     break;
                 case 3:
                     MainActivity.send(BluetoothProtocol.GET_DATA,new byte[]{});
+                    break;
+                case 4:
+                    //自动关
+                    byte[] data1={0x02};
+                    MainActivity.send(BluetoothProtocol.ALERT_CLOSE,data1);
                     break;
 
             }
@@ -1283,6 +1309,19 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 Log.i(TAG, "-------------------case3------------");
                 connectTimer.schedule(connectTask, 100,1000);
                 break;
+            case 4:
+                connectTask = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 4;
+                        handler.sendMessage(message);
+                    }
+                };
+                Log.i(TAG, "-------------------case4------------");
+                connectTimer.schedule(connectTask, 100,1000);
+                break;
 
         }
     }
@@ -1296,6 +1335,18 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
         if(connectTask != null) {
             connectTask.cancel();
             connectTask = null;
+        }
+    }
+
+    public void stopAlertTimer(){
+        if(timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+
+        if(task != null) {
+            task.cancel();
+            task = null;
         }
     }
 

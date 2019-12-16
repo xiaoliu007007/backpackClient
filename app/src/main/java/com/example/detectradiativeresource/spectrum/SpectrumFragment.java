@@ -222,6 +222,7 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
 
     @Override
     public void notifyDataChanged(int[] num) {
+        stopSendTimer();
         data.clear();
         for(int i=1;i<=num.length;i++){
             data.add(new Entry(i,num[i-1]));
@@ -389,7 +390,7 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
                 handler.sendMessage(message);
             }
         };
-        sendTimer.schedule(sendTask,MainActivity.spectrumTimeInterval*1000);
+        sendTimer.schedule(sendTask,MainActivity.spectrumTimeInterval*1000,2000);
     }
 
     private void stopSendTimer(){

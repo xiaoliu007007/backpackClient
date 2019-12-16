@@ -133,7 +133,7 @@ public class LineChartActivity extends AppCompatActivity {
         //是否绘制0所在的网格线
         leftAxis.setDrawZeroLine(false);
 
-        back= findViewById(R.id.return_main);
+        back= (Button)findViewById(R.id.return_main);
         back.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 finish();
