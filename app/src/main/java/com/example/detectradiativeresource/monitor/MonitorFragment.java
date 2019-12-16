@@ -211,11 +211,11 @@ public class MonitorFragment extends Fragment{
         public void onReceiveLocation(BDLocation location) {
             if (null != location && location.getLocType() != BDLocation.TypeServerError) {
                 if (location.getLocType() == BDLocation.TypeServerError) {
-                    Toast.makeText(getActivity().getApplicationContext(), "服务端网络定位失败，可以反馈IMEI号和大体定位时间到loc-bugs@baidu.com，会有人追查原因", Toast.LENGTH_LONG).show();
+                    //Toast.makeText(getActivity().getApplicationContext(), "服务端网络定位失败，可以反馈IMEI号和大体定位时间到loc-bugs@baidu.com，会有人追查原因", Toast.LENGTH_LONG).show();
                 } else if (location.getLocType() == BDLocation.TypeNetWorkException) {
-                    Toast.makeText(getActivity().getApplicationContext(), "网络不同导致定位失败，请检查网络是否通畅", Toast.LENGTH_LONG).show();
+                    //Toast.makeText(getActivity().getApplicationContext(), "网络不同导致定位失败，请检查网络是否通畅", Toast.LENGTH_LONG).show();
                 } else if (location.getLocType() == BDLocation.TypeCriteriaException) {
-                    Toast.makeText(getActivity().getApplicationContext(), "无法获取有效定位依据导致定位失败，一般是由于手机的原因，处于飞行模式下一般会造成这种结果，可以试着重启手机", Toast.LENGTH_LONG).show();
+                    //Toast.makeText(getActivity().getApplicationContext(), "无法获取有效定位依据导致定位失败，一般是由于手机的原因，处于飞行模式下一般会造成这种结果，可以试着重启手机", Toast.LENGTH_LONG).show();
                 }
                 else{
                     MyLocationData locData = new MyLocationData.Builder()
@@ -622,7 +622,7 @@ public class MonitorFragment extends Fragment{
     //开启测量
     public void startMeasure(){
         start.setText("停止");
-        isStop = !isStop;
+        isStop = false;
         DataHelperUtils.saveDataTotalMsg();
         mainActivity.stopTimer();
         mainActivity.startTimer(3);
@@ -672,6 +672,11 @@ public class MonitorFragment extends Fragment{
                 break;*/
             case BluetoothProtocol.GET_DATA:
                 //DataHelperUtils.saveDataTotalMsg();
+                //报警转正常自动关闭报警
+                if(MainActivity.alertState==BluetoothProtocol.ALERT_START&&((MainActivity.valType==1&&data[23]==0)||(MainActivity.valType==2&&data[25]==0))){
+                    MainActivity.isAlertOpen=false;
+                    isSendAlert=true;
+                }
                 if(isSendAlert){
                     isSendAlert=false;
                     mainActivity.stopTimer();
@@ -814,7 +819,7 @@ public class MonitorFragment extends Fragment{
             text+="Am241,";
         }
         if(!text.equals("")){
-            Log.i(TAG, "长度是！！！！！！: " + text.length());
+            //Log.i(TAG, "长度是！！！！！！: " + text.length());
             text=text.substring(0,text.length()-1);
             LatLng llText = new LatLng(MainActivity.latitude+0.00005, MainActivity.longitude);
             OverlayOptions mTextOptions = new TextOptions()
@@ -827,15 +832,36 @@ public class MonitorFragment extends Fragment{
             mAlertOverlay = mBaiduMap.addOverlay(mTextOptions);
         }
         String msg="";
-        switch (data[22]){
+        switch (data[1]){
             case 0:
                 msg="";
                 break;
             case 1:
-                msg="高本底报警";
+                msg="通讯故障";
                 //progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
                 break;
             case 2:
+                msg="稳谱故障";
+                break;
+            case 3:
+                msg="高压故障";
+                //progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                break;
+            case 4:
+                msg="NaI故障";
+                break;
+            case 5:
+                msg="GM管故障";
+                //progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                break;
+            case 6:
+                msg="中子探测器故障";
+                break;
+            case 7:
+                msg="高本底故障";
+                //progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
+                break;
+            case 8:
                 msg="低本底故障";
                 break;
 
@@ -897,7 +923,7 @@ public class MonitorFragment extends Fragment{
             }
             int r_val=BluetoothProtocol.getVal(data,2,3);
             int n_val=BluetoothProtocol.getVal(data,14,15);
-            measureVal_r=String.valueOf(r_val)+"CPS";
+            measureVal_r=String.valueOf(r_val)+" CPS";
             measureVal_n=String.valueOf(n_val);
             r_valView.setText(measureVal_r);
             n_valView.setText(measureVal_n);
@@ -975,15 +1001,15 @@ public class MonitorFragment extends Fragment{
             int r_val=BluetoothProtocol.getVal(data,4,7);
             int n_val=BluetoothProtocol.getVal(data,14,15);
             if(r_val<1000){
-                measureVal_r=String.valueOf(r_val)+"v";
+                measureVal_r=String.valueOf(r_val)+" v";
             }
             else if(r_val<1000000){
                 double n=1000;
-                measureVal_r=String.valueOf(r_val/n)+"msv";
+                measureVal_r=String.valueOf(r_val/n)+" msv";
             }
             else{
                 double n=1000;
-                measureVal_r=String.valueOf(r_val/n)+"sv";
+                measureVal_r=String.valueOf(r_val/n)+" sv";
             }
             measureVal_n=String.valueOf(n_val);
             r_valView.setText(measureVal_r);

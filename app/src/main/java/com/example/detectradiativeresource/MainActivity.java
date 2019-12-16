@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     private static RadioButton bluetoothBtn;//蓝牙按钮
     public static int spectrumTimeInterval=20;//能谱采集时间间隔
     public static boolean isAlertMusic=true;//是否声音报警
+    public static boolean isNoAlert=false;//中途是否出现正常数值
 
     public static double interval;//范围内历史轨迹点的间隔数
     public static double startLatitude;
@@ -868,6 +869,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     else{
                         isAlertOpen=true;
                         isSendCloseAlert=false;
+                        isNoAlert=true;
                     }
                     return;
                 }
@@ -1093,16 +1095,13 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
      **/
     public static void setAutoFlagToTrue(){
         if(receivedState==BluetoothProtocol.SHAKE_HANDS_OK||receivedState==BluetoothProtocol.GET_DATA){
-            Log.i(TAG, "-------------------receivedState is "+receivedState);
+            //Log.i(TAG, "-------------------receivedState is "+receivedState);
             autoFlag=true;
         }
     }
 
     public void handlerAlert(int[] data){
         alertState=BluetoothProtocol.ALERT_START;
-        MonitorFragment monitor =
-                (MonitorFragment)getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
-        monitor.handlerReceivedData(BluetoothProtocol.ALERT_START,data);
         if(!MainActivity.isSendCloseAlert){
             Log.i(TAG, "-------------------自动关闭开始------------");
             timer = new Timer();
@@ -1124,10 +1123,11 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
         public void handleMessage(Message msg) {
             switch (msg.what){
                 case 1:
-                    if(isAlertOpen){
+                    if(isAlertOpen&&!isNoAlert){
                         Log.i(TAG, "----------------自动关闭报警----------------" );
                         stopTimer();
                         startTimer(2);
+                        isNoAlert=false;
                     }
                     MainActivity.isAlertOpen=false;
                     break;
@@ -1255,7 +1255,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                         handler.sendMessage(message);
                     }
                 };
-                connectTimer.schedule(connectTask, 1000,1000);
+                connectTimer.schedule(connectTask, 100,1000);
                 break;
             case 2:
                 connectTask = new TimerTask() {
@@ -1268,7 +1268,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     }
                 };
                 Log.i(TAG, "-------------------case2------------");
-                connectTimer.schedule(connectTask, 1000,1000);
+                connectTimer.schedule(connectTask, 100,1000);
                 break;
             case 3:
                 connectTask = new TimerTask() {
@@ -1281,7 +1281,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     }
                 };
                 Log.i(TAG, "-------------------case3------------");
-                connectTimer.schedule(connectTask, 1000,1000);
+                connectTimer.schedule(connectTask, 100,1000);
                 break;
 
         }

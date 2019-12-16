@@ -44,6 +44,26 @@
             android:layout_marginLeft="100dp"
             android:text="核素类别:"/>
         <TextView
+            android:id="@+id/type_spectrum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="20dp"
+            android:text=""
+            />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="100dp"
+            android:text="核素种类:"/>
+        <TextView
             android:id="@+id/msg_spectrum"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

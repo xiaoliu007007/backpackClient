@@ -41,6 +41,7 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
     private Button btn_spectrum;
     private TextView view_spectrum;
     private TextView msg_spectrum;
+    private TextView type_spectrum;
     private boolean isStartSend=false;//是否准备发送
     private Timer timer = null;
     private TimerTask task = null;
@@ -68,6 +69,7 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
         btn_spectrum=rootView.findViewById(R.id.btn_spectrum);
         view_spectrum=rootView.findViewById(R.id.view_spectrum);
         msg_spectrum=rootView.findViewById(R.id.msg_spectrum);
+        type_spectrum=rootView.findViewById(R.id.type_spectrum);
         btn_spectrum.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 if(isStartSend){
@@ -338,6 +340,18 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
         }
         text=text.substring(0,text.length()-1);
         msg_spectrum.setText(text);
+        String msg="";
+        switch (data[20]){
+            case 0:
+                msg="无";
+                break;
+            case 1:
+                msg="天然";
+                break;
+            case 2:
+                msg="人工";
+                break;
+        }
     }
 
     private void startTimer(){

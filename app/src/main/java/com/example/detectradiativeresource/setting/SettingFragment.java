@@ -594,7 +594,7 @@ public class SettingFragment extends Fragment{
                 break;
 
         }
-        timer.schedule(task, 500,1000);
+        timer.schedule(task, 100,1000);
     }
 
     public void stopTimer(){
