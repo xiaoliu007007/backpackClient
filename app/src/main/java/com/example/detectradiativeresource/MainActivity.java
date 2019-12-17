@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static int alert_n_jishu;
     public static int total_n_jiliang;
     public static int alert_n_jiliang;
-    public static int valType=1;//0表示计数率，1表示计量率
+    public static int valType=1;//1表示计数率，2表示计量率
     public static boolean isAlertOpen = true; //是否是打开报警状态
     public static int closeAlertTime=30;
     public static boolean isSendCloseAlert=false;//没有发送过关闭timer

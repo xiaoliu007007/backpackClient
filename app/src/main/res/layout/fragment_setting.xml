@@ -341,7 +341,7 @@
 
                     <EditText
                         android:id="@+id/NaI_val_a"
-                        android:layout_width="40dp"
+                        android:layout_width="47dp"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginLeft="15dp"
@@ -357,14 +357,14 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentLeft="true"
                         android:layout_centerVertical="true"
-                        android:layout_marginLeft="130dp"
+                        android:layout_marginLeft="135dp"
                         android:layout_alignLeft="@+id/NaI_view_a"
                         android:text="b:"
                         android:textSize="15sp"/>
 
                     <EditText
                         android:id="@+id/NaI_val_b"
-                        android:layout_width="40dp"
+                        android:layout_width="47dp"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginLeft="15dp"
@@ -381,14 +381,14 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentLeft="true"
                         android:layout_centerVertical="true"
-                        android:layout_marginLeft="190dp"
+                        android:layout_marginLeft="200dp"
                         android:layout_alignLeft="@+id/NaI_view_b"
                         android:text="c:"
                         android:textSize="15sp"/>
 
                     <EditText
                         android:id="@+id/NaI_val_c"
-                        android:layout_width="40dp"
+                        android:layout_width="47dp"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginLeft="15dp"
@@ -404,14 +404,14 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentLeft="true"
                         android:layout_centerVertical="true"
-                        android:layout_marginLeft="255dp"
+                        android:layout_marginLeft="265dp"
                         android:layout_alignLeft="@+id/NaI_view_c"
                         android:text="d:"
                         android:textSize="15sp"/>
 
                     <EditText
                         android:id="@+id/NaI_val_d"
-                        android:layout_width="40dp"
+                        android:layout_width="47dp"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginLeft="20dp"

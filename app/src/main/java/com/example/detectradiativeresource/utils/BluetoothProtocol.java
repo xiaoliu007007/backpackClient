@@ -2,6 +2,8 @@ package com.example.detectradiativeresource.utils;
 
 import com.example.detectradiativeresource.MainActivity;
 
+import java.text.DecimalFormat;
+
 public class BluetoothProtocol {
     public static final String NO_STATE="no state";//无协议状态
     public static final String SHAKE_HANDS="shake hands";//握手协议
@@ -127,5 +129,27 @@ public class BluetoothProtocol {
             }
         }
         return ans;
+    }
+
+    public static String removeZero(int num,double n1,int n2){
+        if(num==0){
+            return "0";
+        }
+        String s=String.valueOf(num);
+        int ans=0,n=s.length()-1;
+        while(s.charAt(n)=='0'){
+            ans++;
+            n--;
+        }
+        String ch="0.";
+        ans=n2-ans;
+        //System.out.println("!!!!"+ans);
+        while(ans-->0){
+            ch+="0";
+        }
+        //System.out.println("!!!!"+ch);
+        DecimalFormat df = new DecimalFormat(ch);
+        //double n1=10000;
+        return df.format(num/n1);
     }
 }

@@ -21,6 +21,7 @@ import com.example.detectradiativeresource.R;
 import com.example.detectradiativeresource.utils.BluetoothProtocol;
 import com.example.detectradiativeresource.utils.DataHelperUtils;
 
+import java.text.DecimalFormat;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -240,51 +241,144 @@ public class SettingFragment extends Fragment{
                     NaIAVal=0;
                 }
                 else{
-                    NaIAVal=Integer.parseInt(NaI_a.getText().toString());
+                    try{
+                        NaIAVal=(int)(Double.parseDouble(NaI_a.getText().toString())*10000);
+                    }
+                    catch (Exception e){
+                        Toast.makeText(getActivity().getApplicationContext(), "a参数设置不正确", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    //NaIAVal=Integer.parseInt(NaI_a.getText().toString());
                 }
                 if(NaI_b.getText().toString().equals("")){
                     NaIBVal=0;
                 }
                 else{
-                    NaIBVal=Integer.parseInt(NaI_b.getText().toString());
+                    try{
+                        NaIBVal=(int)(Double.parseDouble(NaI_b.getText().toString())*10000);
+                    }
+                    catch (Exception e){
+                        Toast.makeText(getActivity().getApplicationContext(), "b参数设置不正确", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    //NaIBVal=Integer.parseInt(NaI_b.getText().toString());
                 }
                 if(NaI_c.getText().toString().equals("")){
                     NaICVal=0;
                 }
                 else{
-                    NaICVal=Integer.parseInt(NaI_c.getText().toString());
+                    try{
+                        NaICVal=(int)(Double.parseDouble(NaI_c.getText().toString())*10000);
+                    }
+                    catch (Exception e){
+                        Toast.makeText(getActivity().getApplicationContext(), "c参数设置不正确", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    //NaICVal=Integer.parseInt(NaI_c.getText().toString());
                 }
                 if(NaI_d.getText().toString().equals("")){
                     NaIDVal=0;
                 }
                 else{
-                    NaIDVal=Integer.parseInt(NaI_d.getText().toString());
+                    try{
+                        NaIDVal=(int)(Double.parseDouble(NaI_d.getText().toString())*10000);
+                    }
+                    catch (Exception e){
+                        Toast.makeText(getActivity().getApplicationContext(), "d参数设置不正确", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    //NaIDVal=Integer.parseInt(NaI_d.getText().toString());
                 }
 
-
-                if(alert_threshold_val_1.getText().toString().equals("")){
-                    thresholdAlert_1=0;
-                }
-                else{
-                    thresholdAlert_1=Integer.parseInt(alert_threshold_val_1.getText().toString());
-                    if(thresholdType==1){
-                        MainActivity.alert_r_jiliang=thresholdAlert_1;
+                if(MainActivity.valType==1){
+                    if(alert_threshold_val_1.getText().toString().equals("")){
+                        thresholdAlert_1=0;
                     }
-                    if(thresholdType==3){
-                        MainActivity.alert_n_jishu=thresholdAlert_1;
+                    else{
+                        try{
+                            thresholdAlert_1=Integer.parseInt(alert_threshold_val_1.getText().toString());
+                        }
+                        catch (Exception e){
+                            Toast.makeText(getActivity().getApplicationContext(), "报警阈值设置不正确", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        if(thresholdType==1){
+                            MainActivity.alert_r_jiliang=thresholdAlert_1;
+                        }
+                        if(thresholdType==3){
+                            MainActivity.alert_n_jishu=thresholdAlert_1;
+                        }
                     }
-                }
-                if(alert_threshold_val_2.getText().toString().equals("")){
-                    thresholdAlert_2=0;
-                }
-                else{
-                    thresholdAlert_2=Integer.parseInt(alert_threshold_val_2.getText().toString());
-                }
-                if(alert_threshold_val_3.getText().toString().equals("")){
-                    thresholdAlert_3=0;
-                }
-                else{
-                    thresholdAlert_3=Integer.parseInt(alert_threshold_val_3.getText().toString());
+                    if(alert_threshold_val_2.getText().toString().equals("")){
+                        thresholdAlert_2=0;
+                    }
+                    else{
+                        try{
+                            thresholdAlert_2=Integer.parseInt(alert_threshold_val_2.getText().toString());
+                        }
+                        catch (Exception e){
+                            Toast.makeText(getActivity().getApplicationContext(), "报警阈值设置不正确", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+                    if(alert_threshold_val_3.getText().toString().equals("")){
+                        thresholdAlert_3=0;
+                    }
+                    else{
+                        try{
+                            thresholdAlert_3=Integer.parseInt(alert_threshold_val_3.getText().toString());
+                        }
+                        catch (Exception e){
+                            Toast.makeText(getActivity().getApplicationContext(), "报警阈值设置不正确", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+                }else{
+                    if(alert_threshold_val_1.getText().toString().equals("")){
+                        thresholdAlert_1=0;
+                    }
+                    else{
+                        try{
+                            thresholdAlert_1=(int)(Double.parseDouble(alert_threshold_val_1.getText().toString())*1000);
+                        }
+                        catch (Exception e){
+                            Toast.makeText(getActivity().getApplicationContext(), "报警阈值设置不正确", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        //thresholdAlert_1=Integer.parseInt(alert_threshold_val_1.getText().toString());
+                        if(thresholdType==1){
+                            MainActivity.alert_r_jiliang=thresholdAlert_1;
+                        }
+                        if(thresholdType==3){
+                            MainActivity.alert_n_jishu=thresholdAlert_1;
+                        }
+                    }
+                    if(alert_threshold_val_2.getText().toString().equals("")){
+                        thresholdAlert_2=0;
+                    }
+                    else{
+                        try{
+                            thresholdAlert_2=(int)(Double.parseDouble(alert_threshold_val_2.getText().toString())*1000);
+                        }
+                        catch (Exception e){
+                            Toast.makeText(getActivity().getApplicationContext(), "报警阈值设置不正确", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        //thresholdAlert_2=Integer.parseInt(alert_threshold_val_2.getText().toString());
+                    }
+                    if(alert_threshold_val_3.getText().toString().equals("")){
+                        thresholdAlert_3=0;
+                    }
+                    else{
+                        try{
+                            thresholdAlert_3=(int)(Double.parseDouble(alert_threshold_val_3.getText().toString())*1000);
+                        }
+                        catch (Exception e){
+                            Toast.makeText(getActivity().getApplicationContext(), "报警阈值设置不正确", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        //thresholdAlert_3=Integer.parseInt(alert_threshold_val_3.getText().toString());
+                    }
                 }
                 showbluetoothDialog2();
                 //sendSettingDete();
@@ -477,22 +571,44 @@ public class SettingFragment extends Fragment{
         thresholdLow=BluetoothProtocol.getVal(data,6,7);
         threshold_low_val.setText(String.valueOf(thresholdLow));
 
+        /*double n1=10000;
+        DecimalFormat df = new DecimalFormat("0.0000");
         NaIAVal=BluetoothProtocol.getVal(data,8,9);
-        NaI_a.setText(String.valueOf(NaIAVal));
+        NaI_a.setText(df.format(NaIAVal/n1));
         NaIBVal=BluetoothProtocol.getVal(data,10,11);
-        NaI_b.setText(String.valueOf(NaIBVal));
+        NaI_b.setText(df.format(NaIBVal/n1));
         NaICVal=BluetoothProtocol.getVal(data,12,13);
-        NaI_c.setText(String.valueOf(NaICVal));
+        NaI_c.setText(df.format(NaICVal/n1));
         NaIDVal=BluetoothProtocol.getVal(data,14,15);
-        NaI_d.setText(String.valueOf(NaIDVal));
+        NaI_d.setText(df.format(NaIDVal/n1));*/
+        double n1=10000;
+        NaIAVal=BluetoothProtocol.getVal(data,8,9);
+        NaI_a.setText(BluetoothProtocol.removeZero(NaIAVal,n1,4));
+        NaIBVal=BluetoothProtocol.getVal(data,10,11);
+        NaI_b.setText(BluetoothProtocol.removeZero(NaIBVal,n1,4));
+        NaICVal=BluetoothProtocol.getVal(data,12,13);
+        NaI_c.setText(BluetoothProtocol.removeZero(NaICVal,n1,4));
+        NaIDVal=BluetoothProtocol.getVal(data,14,15);
+        NaI_d.setText(BluetoothProtocol.removeZero(NaIDVal,n1,4));
 
 
         thresholdAlert_1=BluetoothProtocol.getVal(data,16,17);
         thresholdAlert_2=BluetoothProtocol.getVal(data,18,19);
         thresholdAlert_3=BluetoothProtocol.getVal(data,20,21);
-        alert_threshold_val_1.setText(String.valueOf(thresholdAlert_1));
-        alert_threshold_val_2.setText(String.valueOf(thresholdAlert_2));
-        alert_threshold_val_3.setText(String.valueOf(thresholdAlert_3));
+        if(MainActivity.valType==1){
+            alert_threshold_val_1.setText(String.valueOf(thresholdAlert_1));
+            alert_threshold_val_2.setText(String.valueOf(thresholdAlert_2));
+            alert_threshold_val_3.setText(String.valueOf(thresholdAlert_3));
+        }
+        else{
+            double n2=1000;
+            alert_threshold_val_1.setText(BluetoothProtocol.removeZero(thresholdAlert_1,n2,3));
+            alert_threshold_val_2.setText(BluetoothProtocol.removeZero(thresholdAlert_2,n2,3));
+            alert_threshold_val_3.setText(BluetoothProtocol.removeZero(thresholdAlert_3,n2,3));
+            /*alert_threshold_val_1.setText(String.valueOf(thresholdAlert_1/n2));
+            alert_threshold_val_2.setText(String.valueOf(thresholdAlert_2/n2));
+            alert_threshold_val_3.setText(String.valueOf(thresholdAlert_3/n2));*/
+        }
         //Log.i(TAG, "处理读取数据二！！！！" );
     }
 

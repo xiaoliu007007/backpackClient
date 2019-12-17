@@ -17,6 +17,7 @@ import android.widget.Toast;
 import com.example.detectradiativeresource.MainActivity;
 import com.example.detectradiativeresource.R;
 import com.example.detectradiativeresource.utils.BluetoothProtocol;
+import com.example.detectradiativeresource.utils.FileUtils;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
@@ -229,6 +230,7 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
         }
         notifyChanged();
         MainActivity.send(BluetoothProtocol.GET_DATA,new byte[]{});
+        generateFile(num);
     }
 
     public void sendData(){
@@ -289,10 +291,10 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
         String text="";
         int[] type=BluetoothProtocol.getTypeArrayByTwo(BluetoothProtocol.getVal(data,18,19));
         if(type[0]==1){
-            text+="U235,";
+            text+="Cs137,";
         }
         if(type[1]==1){
-            text+="Pu,";
+            text+="U235,";
         }
         if(type[2]==1){
             text+="U238,";
@@ -304,24 +306,24 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
             text+="K40,";
         }
         if(type[5]==1){
-            text+="Tl201,";
-        }
-        if(type[6]==1){
             text+="I131,";
         }
+        if(type[6]==1){
+            text+="Ba133,";
+        }
         if(type[7]==1){
-            text+="Ga67,";
+            text+="Co57,";
         }
         if(type[8]==1){
-            text+="Tl204,";
+            text+="Co60,";
         }
         if(type[9]==1){
-            text+="Ra236,";
+            text+="Tc99m,";
         }
         if(type[10]==1){
-            text+="Ir162,";
+            text+="Am241,";
         }
-        if(type[11]==1){
+        /*if(type[11]==1){
             text+="Ba133,";
         }
         if(type[12]==1){
@@ -335,7 +337,7 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
         }
         if(type[15]==1){
             text+="Am241,";
-        }
+        }*/
         if(text.equals("")){
             return;
         }
@@ -426,6 +428,15 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
         btn_spectrum.setText("读谱");
         isStartSend=false;
         //btn_spectrum.setEnabled(true);
+    }
+
+    public void generateFile(int[] num){
+        StringBuilder sb=new StringBuilder();
+        for(int n:num){
+            sb.append(n);
+            sb.append(" ");
+        }
+        FileUtils.writeTxtToFile(sb.toString(), "/sdcard/Spectrum/", FileUtils.getFileName());
     }
 }
 

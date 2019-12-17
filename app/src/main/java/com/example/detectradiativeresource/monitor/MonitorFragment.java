@@ -779,10 +779,10 @@ public class MonitorFragment extends Fragment{
         String text="";
         int[] type=BluetoothProtocol.getTypeArrayByTwo(BluetoothProtocol.getVal(data,18,19));
         if(type[0]==1){
-            text+="U235,";
+            text+="Cs137,";
         }
         if(type[1]==1){
-            text+="Pu,";
+            text+="U235,";
         }
         if(type[2]==1){
             text+="U238,";
@@ -794,24 +794,24 @@ public class MonitorFragment extends Fragment{
             text+="K40,";
         }
         if(type[5]==1){
-            text+="Tl201,";
-        }
-        if(type[6]==1){
             text+="I131,";
         }
+        if(type[6]==1){
+            text+="Ba133,";
+        }
         if(type[7]==1){
-            text+="Ga67,";
+            text+="Co57,";
         }
         if(type[8]==1){
-            text+="Tl204,";
+            text+="Co60,";
         }
         if(type[9]==1){
-            text+="Ra236,";
+            text+="Tc99m,";
         }
         if(type[10]==1){
-            text+="Ir162,";
+            text+="Am241,";
         }
-        if(type[11]==1){
+        /*if(type[11]==1){
             text+="Ba133,";
         }
         if(type[12]==1){
@@ -825,7 +825,7 @@ public class MonitorFragment extends Fragment{
         }
         if(type[15]==1){
             text+="Am241,";
-        }
+        }*/
         if(!text.equals("")){
             //Log.i(TAG, "长度是！！！！！！: " + text.length());
             text=text.substring(0,text.length()-1);
@@ -1011,15 +1011,15 @@ public class MonitorFragment extends Fragment{
             double r_val_d=(double)r_val/m;
             int n_val=BluetoothProtocol.getVal(data,14,15);
             if(r_val_d<1000){
-                measureVal_r=String.valueOf(r_val_d)+" v";
+                measureVal_r=String.valueOf(r_val_d)+" uSv/h";
             }
             else if(r_val_d<1000000){
                 double n=1000;
-                measureVal_r=String.valueOf(r_val_d/n)+" msv";
+                measureVal_r=String.valueOf(r_val_d/n)+" mSv/h";
             }
             else{
                 double n=1000;
-                measureVal_r=String.valueOf(r_val_d/n)+" sv";
+                measureVal_r=String.valueOf(r_val_d/n)+" Sv/h";
             }
             measureVal_n=String.valueOf(n_val);
             r_valView.setText(measureVal_r);
