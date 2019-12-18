@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.PowerManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
@@ -120,6 +121,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static final int VIEW_SPECTRUM_INDEX = 5;
     private int temp_position_index = -1;
     public static String IP;//服务器IP地址以及端口
+    private PowerManager.WakeLock mWakeLock;
 
 
     public static BluetoothLeService mBluetoothLeService;
@@ -140,6 +142,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static String settingSetDataPart2State=BluetoothProtocol.NO_STATE;//设置第一部分参数内容状态
     private static byte[] send_set_part2_2=new byte[4];
     private static boolean isSendAgain=false;
+    private static boolean isFirstRead=true;//第一次获取参数设置
 
     public static String getSpectrum=BluetoothProtocol.NO_STATE;//能谱获取状态
 
@@ -156,6 +159,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
             }
             Log.e(TAG, "-----------------mServiceConnection connect--------------");
             mBluetoothLeService.connect(connectedAddress);
+            isFirstRead=true;
             //address=connectedAddress;
             //mBluetoothLeService.connect(address);
         }
@@ -212,7 +216,14 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     receivedState=BluetoothProtocol.SHAKE_HANDS_OK;
                     //stopConnectTimer();
                     stopTimer();
+                    MainActivity.send(BluetoothProtocol.SETTING_GET_DATA_PART1,new byte[]{});
                     return;
+                }
+                if(isFirstRead&&settingGetDataPart1State==BluetoothProtocol.SETTING_GET_DATA_PART1&&data.length==6){
+                    settingGetDataPart1State=BluetoothProtocol.SETTING_GET_DATA_PART1_OK;
+                    spectrumTimeInterval=data[1];
+                    return;
+
                 }
                 Log.v("log","----------------------------received enter------------------"+data.length);
                 int i=0;
@@ -309,6 +320,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
         Log.i(TAG, "--------------onResume ---------------");
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        //acquireWakeLock();
     }
 
     @Override
@@ -319,7 +331,26 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
         unregisterReceiver(mGattUpdateReceiver);
         //stopConnectTimer();
         stopTimer();
+        //releaseWakeLock();
         Log.i(TAG, "--------------onPause ---------------");
+    }
+
+    private void acquireWakeLock() {
+        if(mWakeLock == null) {
+            PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+            mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                    this.getClass().getCanonicalName());
+            mWakeLock.acquire();
+
+        }
+
+    }
+
+    private void releaseWakeLock() {
+        if(mWakeLock != null) {
+            mWakeLock.release();
+            mWakeLock = null;
+        }
     }
 
 

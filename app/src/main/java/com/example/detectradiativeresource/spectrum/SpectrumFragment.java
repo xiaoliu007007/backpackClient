@@ -111,11 +111,11 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
         lineChart.setDrawBorders(false);//禁止绘制图表边框的线
 
         data = new ArrayList<>();
-        data.add(new Entry(4,10));
-        data.add(new Entry(6,15));
-        data.add(new Entry(9,20));
-        data.add(new Entry(12,5));
-        data.add(new Entry(15,30));
+        data.add(new Entry(4,0));
+        data.add(new Entry(6,0));
+        data.add(new Entry(9,0));
+        data.add(new Entry(12,0));
+        data.add(new Entry(15,0));
 
         //判断图表中原来是否有数据
         if (lineChart.getData() != null &&
