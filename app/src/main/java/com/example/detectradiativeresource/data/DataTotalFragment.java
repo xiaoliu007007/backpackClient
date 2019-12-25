@@ -31,6 +31,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,8 +42,10 @@ import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.client.HttpClient;
 import cz.msebera.android.httpclient.client.entity.UrlEncodedFormEntity;
 import cz.msebera.android.httpclient.client.methods.HttpPost;
+import cz.msebera.android.httpclient.entity.StringEntity;
 import cz.msebera.android.httpclient.impl.client.DefaultHttpClient;
 import cz.msebera.android.httpclient.message.BasicNameValuePair;
+import cz.msebera.android.httpclient.protocol.HTTP;
 import cz.msebera.android.httpclient.util.EntityUtils;
 
 public class DataTotalFragment extends Fragment{
@@ -83,7 +86,7 @@ public class DataTotalFragment extends Fragment{
         upload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendMsg(DataHelperUtils.findAllDataMsg());
+                sendMsg(DataHelperUtils.findDataByNowDate(),"predict");
             }
         });
         infoList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -130,7 +133,7 @@ public class DataTotalFragment extends Fragment{
             case 2:
                 long sendId= DataHelperUtils.findDataTotalMsgId(position);
                 if(sendId>0){
-                    sendMsg(DataHelperUtils.findDataMsgByParent(sendId));
+                    sendMsg(DataHelperUtils.findDataMsgByParent(sendId),"save");
                 }
                 break;
         }
@@ -156,7 +159,7 @@ public class DataTotalFragment extends Fragment{
         List<DataTotalMsg > msg = DataTotalMsg.listAll(DataTotalMsg .class);
         return msg;
     }
-    private void sendMsg(final List<DataMsg> list){
+    private void sendMsg(final List<DataMsg> list,final String message){
         DataHelperUtils.saveLogMsg("上传","上传数据");
         new Thread(new Runnable() {
             @Override
@@ -169,9 +172,17 @@ public class DataTotalFragment extends Fragment{
                     NameValuePair data = new BasicNameValuePair("name", msg.toString());
                     datas.add(data);
                 }
+                NameValuePair data = new BasicNameValuePair("msg", message);
+                datas.add(data);
                 try {
-                    HttpEntity requestEntity = new UrlEncodedFormEntity(datas);
+                    HttpEntity requestEntity = new UrlEncodedFormEntity(datas, HTTP.UTF_8);
+                    /*httpPost.addHeader("Content-type","application/json; charset=utf-8");
+                    httpPost.setHeader("Accept", "application/json");*/
                     httpPost.setEntity(requestEntity);
+                    if(message.equals("save")){
+                        httpClient.execute(httpPost);
+                        return;
+                    }
                     try {
                         HttpResponse response = httpClient.execute(httpPost);
                         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
@@ -186,7 +197,7 @@ public class DataTotalFragment extends Fragment{
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                } catch (UnsupportedEncodingException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }

@@ -62,7 +62,7 @@ public class DataMsgAdapter extends BaseAdapter {
         //设置控件数据
         viewHolder.viewId.setText(String.valueOf(position+1));
         viewHolder.time.setText(msg.getTime());
-        viewHolder.value.setText(msg.getValue());
+        viewHolder.value.setText(msg.getNaI_jishu()+"CPS");
         viewHolder.longitude.setText(String.valueOf(msg.getLongitude()));
         viewHolder.latitude.setText(String.valueOf(msg.getLatitude()));
         viewHolder.isAlarm.setText(msg.getIsAlarm());

@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="3"
             android:gravity="center"
-            android:text="辐射值"
+            android:text="NaI计数率"
             android:textStyle="bold" />
 
         <TextView

@@ -16,7 +16,7 @@ import java.util.List;
  **/
 public class DBScanUtils {
     private static int minpts = 44;
-    private static double radius = 0.2;
+    private static double radius = 0.00001;
     private static List<double[]> cores;
     private static int interval = 250;
 
@@ -28,7 +28,7 @@ public class DBScanUtils {
     private static double countEurDistance(double[] point1, double[] point2) {
         double eurDistance = 0.0;
         for (int i = 0; i < point1.length; i++) {
-            eurDistance += (point1[i] - point2[i]) * (point1[i] - point2[i]);
+            eurDistance += Math.abs(point1[i] - point2[i]) * Math.abs(point1[i] - point2[i]);
         }
         return Math.sqrt(eurDistance);
     }
@@ -109,8 +109,9 @@ public class DBScanUtils {
      * @author: lyj
      * @create: 2019/09/23
      **/
-    private static double[] DBSCAN(ArrayList<ArrayList<Double>> list) {
+    public static double[] DBSCAN(ArrayList<ArrayList<Double>> list) {
         double[][] data = MySort(list);
+        minpts=list.size()/5;
         ArrayList<double[]> circle = new ArrayList<double[]>();
         for (int i = 0; i < data.length - 2; i++) {
             for (int j = i + 1; j < data.length - 1; j++) {
@@ -129,24 +130,63 @@ public class DBScanUtils {
             }
         }
         cores = findCores(circle, minpts, radius);
-        double[] ans = { 0.0, 0.0 };
+        //double[] ans = { 0.0, 0.0 };
+        double[] ans = { 116.364734, 39.968584 };
         for (double[] core : cores) {
             ans[0] += core[0];
             ans[1] += core[1];
         }
+        if(cores.size()==0){
+            return ans;
+        }
         ans[0] /= cores.size();
         ans[1] /= cores.size();
+        ans[0] =Double.parseDouble(String.format("%.6f", ans[0]));
+        ans[1] =Double.parseDouble(String.format("%.6f", ans[1]));
         return ans;
     }
 
     public static double[] getTestMsg() {
         double[] ans={0,0};
         try {
-            ans = DBSCAN(read());
-        } catch (IOException e) {
+            ans = DBSCAN(ArrayToList());
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return ans;
+    }
+
+    public static ArrayList<ArrayList<Double>> ArrayToList(){
+        double[][] data={{1.00090, 1.00090, 583490}, {1.00091, 1.00090, 584970}, {1.00092, 1.00090, 586080}, {1.00093, 1.00090, 587042},
+                {1.00094, 1.00090, 588004}, {1.00095, 1.00090, 588929}, {1.00096, 1.00090, 589817}, {1.00097, 1.00090, 590335},
+                {1.00098, 1.00090, 590742}, {1.00099, 1.00090, 590927}, {1.00100, 1.00090, 591038}, {1.00101, 1.00090, 591593},
+                {1.00102, 1.00090, 590853}, {1.00103, 1.00090, 590261}, {1.00104, 1.00090, 589669}, {1.00105, 1.00090, 588929},
+                {1.00106, 1.00090, 588855}, {1.00107, 1.00090, 587153}, {1.00108, 1.00090, 586043}, {1.00109, 1.00090, 584674},
+                {1.00090, 1.00089, 581381}, {1.00091, 1.00089, 582861}, {1.00092, 1.00089, 584082}, {1.00093, 1.00089, 585414},
+                {1.00094, 1.00089, 586450}, {1.00095, 1.00089, 587449}, {1.00096, 1.00089, 588078}, {1.00097, 1.00089, 588855},
+                {1.00098, 1.00089, 589188}, {1.00099, 1.00089, 589336}, {1.00096, 1.00088, 586413}, {1.00097, 1.00088, 587264},
+                {1.00098, 1.00088, 587671}, {1.00099, 1.00088, 587486}, {1.00100, 1.00088, 587375}, {1.00101, 1.00088, 587301},
+                {1.00102, 1.00088, 587227}, {1.00103, 1.00088, 586782}, {1.00104, 1.00088, 586043}, {1.00105, 1.00088, 585229},
+                {1.00106, 1.00088, 584341}, {1.00107, 1.00088, 583342}, {1.00108, 1.00088, 582306}, {1.00109, 1.00088, 581270},
+                {1.00090, 1.00087, 577496}, {1.00091, 1.00087, 579013}, {1.00092, 1.00087, 580382}, {1.00093, 1.00087, 581566},
+                {1.00094, 1.00087, 582528}, {1.00095, 1.00087, 583527}, {1.00096, 1.00087, 584266}, {1.00097, 1.00087, 585192},
+                {1.00098, 1.00087, 585488}, {1.00099, 1.00087, 585524}, {1.00100, 1.00087, 585377}, {1.00101, 1.00087, 585266},
+                {1.00102, 1.00087, 585081}, {1.00103, 1.00087, 584748}, {1.00104, 1.00087, 584156}, {1.00105, 1.00087, 583268},
+                {1.00106, 1.00087, 582343}, {1.00107, 1.00087, 581307}, {1.00108, 1.00087, 580382}, {1.00109, 1.00087, 579234},
+                {1.00090, 1.00086, 575461}, {1.00091, 1.00086, 576978}, {1.00092, 1.00086, 578384}, {1.00093, 1.00086, 579568},
+                {1.00094, 1.00086, 580567}, {1.00095, 1.00086, 581418}, {1.00096, 1.00086, 582084}, {1.00097, 1.00086, 582639},
+                {1.00098, 1.00086, 583008}, {1.00099, 1.00086, 583157}, {1.00100, 1.00086, 583231}, {1.00101, 1.00086, 583120},
+                {1.00102, 1.00086, 583008}, {1.00103, 1.00086, 582639}, {1.00104, 1.00086, 582084}, {1.00105, 1.00086, 581270},
+                {1.00106, 1.00086, 580234}, {1.00107, 1.00086, 579198}, {1.00108, 1.00086, 578088}, {1.00109, 1.00086, 576904}};
+        ArrayList<ArrayList<Double>> list=new ArrayList<>();
+        for(double[] data1:data){
+            ArrayList<Double> list1=new ArrayList<>();
+            for(double data2:data1){
+                list1.add(data2);
+            }
+            list.add(list1);
+        }
+        return list;
     }
 
     /**

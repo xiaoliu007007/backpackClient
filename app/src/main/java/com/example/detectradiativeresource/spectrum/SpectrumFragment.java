@@ -25,13 +25,15 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class SpectrumFragment extends Fragment implements MainActivity.SpectrumListener {
+public class SpectrumFragment extends Fragment implements MainActivity.SpectrumListener, OnChartValueSelectedListener {
     // 缓存Fragment view
     public static final String TAG="SpectrumFragment";
     private View rootView;
@@ -78,6 +80,8 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
                     stopTimer();
                     btn_spectrum.setText("读谱");
                     view_spectrum.setText("倒计时");
+                    type_spectrum.setText(" ");
+                    msg_spectrum.setText(" ");
                     isStartSend=false;
                 }
                 else{
@@ -132,13 +136,14 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
             set1.setColor(Color.BLACK);
             set1.setCircleColor(Color.BLACK);
             set1.setLineWidth(1f);//设置线宽
-            set1.setDrawValues(false);
+            set1.setDrawValues(true);
             set1.setDrawCircles(false);
             //set1.setCircleRadius(0f);//设置焦点圆心的大小
             set1.enableDashedHighlightLine(10f, 5f, 0f);//点击后的高亮线的显示样式
             set1.setHighlightLineWidth(2f);//设置点击交点后显示高亮线宽
             set1.setHighlightEnabled(true);//是否禁用点击高亮线
             set1.setHighLightColor(Color.RED);//设置点击交点后显示交高亮线的颜色
+
             //set1.setValueTextSize(9f);//设置显示值的文字大小
             set1.setDrawFilled(false);//设置禁用范围背景填充
 
@@ -153,7 +158,7 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
             //绘制图表
             lineChart.invalidate();
         }
-
+        lineChart.setOnChartValueSelectedListener(this);
         lineChart.setTouchEnabled(true); // 设置是否可以触摸
         lineChart.setDragEnabled(true);// 是否可以拖拽
         lineChart.setScaleEnabled(false);// 是否可以缩放 x和y轴, 默认是true
@@ -219,6 +224,8 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
     @Override
     public void onResume() {
         super.onResume();
+        type_spectrum.setText(" ");
+        msg_spectrum.setText(" ");
     }
 
     @Override
@@ -254,6 +261,8 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
                     startTimer();
                     break;
                 case 2:
+                    type_spectrum.setText(" ");
+                    msg_spectrum.setText(" ");
                     lineChart.getData().notifyDataChanged();
                     lineChart.notifyDataSetChanged();
                     lineChart.invalidate();
@@ -427,6 +436,8 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
         stopSendTimer();
         btn_spectrum.setText("读谱");
         isStartSend=false;
+        type_spectrum.setText(" ");
+        msg_spectrum.setText(" ");
         //btn_spectrum.setEnabled(true);
     }
 
@@ -437,6 +448,16 @@ public class SpectrumFragment extends Fragment implements MainActivity.SpectrumL
             sb.append(" ");
         }
         FileUtils.writeTxtToFile(sb.toString(), "/sdcard/Spectrum/", FileUtils.getFileName());
+    }
+
+    @Override
+    public void onValueSelected(Entry e, Highlight h) {
+        Toast.makeText(getActivity().getApplicationContext(), "X: "+e.getX()+"Y: "+e.getY(), Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onNothingSelected() {
+
     }
 }
 

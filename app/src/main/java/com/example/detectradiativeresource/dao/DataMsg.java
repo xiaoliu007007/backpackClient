@@ -11,10 +11,15 @@ import com.orm.dsl.Unique;
 public class DataMsg extends SugarRecord {
     @Unique
     String time;
-    String value;
+    String NaI_jishu;
+    String NaI_jiliang;
+    String GM_jishu;
+    String GM_jiliang;
+    String n_jishu;
+    String n_jiliang;
     double longitude;
     double latitude;
-    int status; //历史点状态，1表式为绘制轨迹点
+    int status; //历史点状态，0表示为普通状态，1表示为绘制轨迹点，2表示为预测点
     String isAlarm;
     long parent;
 
@@ -22,9 +27,14 @@ public class DataMsg extends SugarRecord {
 
     }
 
-    public DataMsg(String time, String value, double longitude, double latitude, int status, String isAlarm, long parent) {
+    public DataMsg(String time, String naI_jishu, String naI_jiliang, String GM_jishu, String GM_jiliang, String n_jishu, String n_jiliang, double longitude, double latitude, int status, String isAlarm, long parent) {
         this.time = time;
-        this.value = value;
+        NaI_jishu = naI_jishu;
+        NaI_jiliang = naI_jiliang;
+        this.GM_jishu = GM_jishu;
+        this.GM_jiliang = GM_jiliang;
+        this.n_jishu = n_jishu;
+        this.n_jiliang = n_jiliang;
         this.longitude = longitude;
         this.latitude = latitude;
         this.status = status;
@@ -40,12 +50,52 @@ public class DataMsg extends SugarRecord {
         this.time = time;
     }
 
-    public String getValue() {
-        return value;
+    public String getNaI_jishu() {
+        return NaI_jishu;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setNaI_jishu(String naI_jishu) {
+        NaI_jishu = naI_jishu;
+    }
+
+    public String getNaI_jiliang() {
+        return NaI_jiliang;
+    }
+
+    public void setNaI_jiliang(String naI_jiliang) {
+        NaI_jiliang = naI_jiliang;
+    }
+
+    public String getGM_jishu() {
+        return GM_jishu;
+    }
+
+    public void setGM_jishu(String GM_jishu) {
+        this.GM_jishu = GM_jishu;
+    }
+
+    public String getGM_jiliang() {
+        return GM_jiliang;
+    }
+
+    public void setGM_jiliang(String GM_jiliang) {
+        this.GM_jiliang = GM_jiliang;
+    }
+
+    public String getN_jishu() {
+        return n_jishu;
+    }
+
+    public void setN_jishu(String n_jishu) {
+        this.n_jishu = n_jishu;
+    }
+
+    public String getN_jiliang() {
+        return n_jiliang;
+    }
+
+    public void setN_jiliang(String n_jiliang) {
+        this.n_jiliang = n_jiliang;
     }
 
     public double getLongitude() {
@@ -90,18 +140,8 @@ public class DataMsg extends SugarRecord {
 
     @Override
     public String toString() {
-        return time + '#'+value + '#' + longitude +"#"+ latitude;
+        return time + '#'+NaI_jishu + '#'+NaI_jiliang +'#'+GM_jishu +'#'+GM_jiliang +'#'+n_jishu +'#'+n_jiliang +'#' + longitude +"#"+ latitude+'#'+isAlarm+"#"+ status;
     }
 
-    public String myToString() {
-        return "DataMsg{" +
-                "time='" + time + '\'' +
-                ", value='" + value + '\'' +
-                ", longitude=" + longitude +
-                ", latitude=" + latitude +
-                ", status=" + status +
-                ", isAlarm='" + isAlarm + '\'' +
-                ", parent=" + parent +
-                '}';
-    }
+
 }

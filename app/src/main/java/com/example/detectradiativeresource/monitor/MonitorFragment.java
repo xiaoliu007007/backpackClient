@@ -2,6 +2,7 @@ package com.example.detectradiativeresource.monitor;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.location.LocationListener;
 import android.media.AudioManager;
@@ -23,6 +24,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.mapapi.map.CircleOptions;
+import com.baidu.mapapi.map.MyLocationConfiguration;
+import com.baidu.mapapi.map.Stroke;
 import com.baidu.mapapi.map.TextOptions;
 import com.example.detectradiativeresource.MainActivity;
 import com.example.detectradiativeresource.R;
@@ -46,6 +50,7 @@ import com.baidu.mapapi.utils.DistanceUtil;
 import com.example.detectradiativeresource.Test.MsgTest;
 import com.example.detectradiativeresource.dao.DataMsg;
 import com.example.detectradiativeresource.monitor.trace.LocationService;
+import com.example.detectradiativeresource.route.BNaviMainActivity;
 import com.example.detectradiativeresource.utils.BluetoothProtocol;
 import com.example.detectradiativeresource.utils.DBScanUtils;
 import com.example.detectradiativeresource.utils.DataHelperUtils;
@@ -69,6 +74,7 @@ public class MonitorFragment extends Fragment{
     private Button start;
     private Button cal;
     private Button btn_alert;
+    private Button btn_navi;
     //private Button btn_spectrum;
     private Vibrator vibrator;
     private MediaPlayer mMediaPlayer;
@@ -110,6 +116,11 @@ public class MonitorFragment extends Fragment{
     private int sendFlag;//表示目前所处状态，1是连接中，2是已经连接，3是断开。
     //private boolean isNomalOnce=true;//是否是第一次进入正常区域
 
+    /**************************************导航算法部分*************************************/
+    private Overlay directionCircle = null;  //路径
+    private Overlay directionLine = null;
+    private Overlay regionCircle = null;  //路径
+
     public MonitorFragment(){
 
     }
@@ -140,6 +151,7 @@ public class MonitorFragment extends Fragment{
         mBaiduMap.setMyLocationEnabled(true);
         MapStatus.Builder builder = new MapStatus.Builder();
         builder.zoom(21);
+
         mBaiduMap.setMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
 
         mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
@@ -154,6 +166,7 @@ public class MonitorFragment extends Fragment{
                 return false;
             }
         });
+
     }
 
     @Override
@@ -269,8 +282,15 @@ public class MonitorFragment extends Fragment{
                     }else {
 
                     }
+                    if(MainActivity.isNaviStart){
+                        findDirection();
+                    }
+                    if(MainActivity.isNaviEnd){
+                        alongWithDirection();
+                    }
+                    canStartPrediction();
                     //mCallback.setLocation(latitude,longitude);
-                    setMarker();
+                    /*setMarker();
                     if(!MainActivity.setRegion){
                         if(flag==0){
                             //Log.i(TAG, "寻找起点");
@@ -288,7 +308,7 @@ public class MonitorFragment extends Fragment{
                     if(MainActivity.setRegion){
                         double[] now={MainActivity.rightLatitude,MainActivity.rightLongitude};
                         createRegion(now,MainActivity.rightDir);
-                    }
+                    }*/
                 }
 
             }
@@ -309,6 +329,7 @@ public class MonitorFragment extends Fragment{
         start = (Button) view.findViewById(R.id.start);
         //start.setBackgroundColor(Color.GREEN);
         btn_alert=view.findViewById(R.id.alert_close);
+        btn_navi=view.findViewById(R.id.get_navi);
         //btn_spectrum=view.findViewById(R.id.get_spectrum);
         progressBar_r = (ProgressBar)view.findViewById(R.id.progress_r);
         progressBar_r.setProgress(0);
@@ -357,19 +378,58 @@ public class MonitorFragment extends Fragment{
                 }
             }
         });
-        /**
-         * @description: DBSCAN测试按钮
-         * @author: lyj
-         * @create: 2019/09/23
-         **/
+        btn_navi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(MainActivity.isPredictStart||MainActivity.isEnterRegion){
+                    Toast.makeText(getActivity().getApplicationContext(), "预测中或者已经到达预测点位置，导航不可用", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if(!MainActivity.isNaviStart){
+                    Toast.makeText(getActivity().getApplicationContext(), "请在该区域内采集数据，再次点击导航按钮，即可导航", Toast.LENGTH_LONG).show();
+                    startDirection();
+                }
+                else{
+                    if(MainActivity.incrByValue!=0){
+                        Toast.makeText(getActivity().getApplicationContext(), "请沿当前方向前进", Toast.LENGTH_LONG).show();
+                        endDirection();
+                    }
+                    else{
+                        Toast.makeText(getActivity().getApplicationContext(), "采集的点不充分，无法导航，请继续采集一部分数据", Toast.LENGTH_LONG).show();
+                    }
+
+                    /*MainActivity.incrByLatitude=0.001;
+                    MainActivity.incrByLongitude=0.001;
+                    endDirection();*/
+                }
+            }
+        });
         cal.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                double[] ans= DBScanUtils.getTestMsg();
-                Toast.makeText(getActivity().getApplicationContext(), "预测坐标为"+ans[0]+":"+ans[1], Toast.LENGTH_LONG).show();
+                /*double[] ans= DBScanUtils.getTestMsg();
+                Toast.makeText(getActivity().getApplicationContext(), "预测坐标为"+ans[0]+":"+ans[1], Toast.LENGTH_LONG).show();*/
+                if(MainActivity.isEnterRegion){
+                    if(!MainActivity.isPredictStart){
+                        startPrediction();
+                    }
+                    else{
+                        if(canEndPrediction()){
+                            endPrediction();
+                        }
+                        else{
+                            Toast.makeText(getActivity().getApplicationContext(), "采集数据点不够，请继续采集", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }
+                else{
+                    Toast.makeText(getActivity().getApplicationContext(), "未到达可以预测区域，请继续按照导航方向前进", Toast.LENGTH_LONG).show();
+                }
             }
         });
         btn_alert.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
+                stopMusic();
+                stopViberate();
                 /*if(MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS_FAILED||MainActivity.receivedState==BluetoothProtocol.NO_STATE||
                         MainActivity.receivedState==BluetoothProtocol.SHAKE_HANDS){
                     MainActivity.send(BluetoothProtocol.SHAKE_HANDS,new byte[]{});
@@ -434,8 +494,8 @@ public class MonitorFragment extends Fragment{
                 }
             }
         });*/
-        setTestMsg();
-        initHistoryPoint();
+        //setTestMsg();
+        //initHistoryPoint();
     }
 
     private void startMusic(){
@@ -624,7 +684,9 @@ public class MonitorFragment extends Fragment{
     public void startMeasure(){
         start.setText("停止");
         isStop = false;
-        DataHelperUtils.saveDataTotalMsg();
+        if(DataHelperUtils.isNewDate()){
+            DataHelperUtils.saveDataTotalMsg();
+        }
         mainActivity.stopTimer();
         mainActivity.startTimer(3);
     }
@@ -753,7 +815,7 @@ public class MonitorFragment extends Fragment{
     }
 
     private void setAlert(int[] data) {
-        isAlert=true;
+        //isAlert=true;
         if(!MainActivity.isAlertOpen){
             return;
         }
@@ -770,11 +832,11 @@ public class MonitorFragment extends Fragment{
      **/
     public void UpdateUI(int[] data){
         //在地图上显示文字覆盖物
-        if(mAlertOverlay!=null){
-            mAlertOverlay.remove();
-        }
         if(mAlertOverlayMsg!=null){
             mAlertOverlayMsg.remove();
+        }
+        /*if(mAlertOverlay!=null){
+            mAlertOverlay.remove();
         }
         String text="";
         int[] type=BluetoothProtocol.getTypeArrayByTwo(BluetoothProtocol.getVal(data,18,19));
@@ -811,7 +873,7 @@ public class MonitorFragment extends Fragment{
         if(type[10]==1){
             text+="Am241,";
         }
-        /*if(type[11]==1){
+        *//*if(type[11]==1){
             text+="Ba133,";
         }
         if(type[12]==1){
@@ -825,7 +887,7 @@ public class MonitorFragment extends Fragment{
         }
         if(type[15]==1){
             text+="Am241,";
-        }*/
+        }*//*
         if(!text.equals("")){
             //Log.i(TAG, "长度是！！！！！！: " + text.length());
             text=text.substring(0,text.length()-1);
@@ -838,7 +900,7 @@ public class MonitorFragment extends Fragment{
                     .rotate(0) //旋转角度
                     .position(llText);
             mAlertOverlay = mBaiduMap.addOverlay(mTextOptions);
-        }
+        }*/
         String msg="";
         switch (data[1]){
             case 0:
@@ -886,7 +948,26 @@ public class MonitorFragment extends Fragment{
                     .position(llText1);
             mAlertOverlayMsg = mBaiduMap.addOverlay(mTextOptions1);
         }
-        switch (data[24]){
+        MainActivity.Nai_jishu=BluetoothProtocol.getVal(data,2,3);
+        MainActivity.Nai_jiliang=BluetoothProtocol.getVal(data,4,7);
+        MainActivity.GM_jishu=BluetoothProtocol.getVal(data,8,9);
+        MainActivity.GM_jiliang=BluetoothProtocol.getVal(data,10,13);
+        MainActivity.n_jishu=BluetoothProtocol.getVal(data,14,15);
+        MainActivity.n_jiliang=BluetoothProtocol.getVal(data,16,17);
+        boolean isAlert=false;
+        if(data[23]!=0){
+            isAlert=true;
+        }
+        if(MainActivity.isPredictStart){
+            DataHelperUtils.saveDataMsg(String.valueOf(MainActivity.Nai_jishu),String.valueOf(MainActivity.Nai_jiliang),String.valueOf(MainActivity.GM_jishu),
+                    String.valueOf(MainActivity.GM_jiliang),String.valueOf(MainActivity.n_jishu),String.valueOf(MainActivity.n_jiliang),longitude,latitude,2,isAlert);
+        }
+        else{
+            DataHelperUtils.saveDataMsg(String.valueOf(MainActivity.Nai_jishu),String.valueOf(MainActivity.Nai_jiliang),String.valueOf(MainActivity.GM_jishu),
+                    String.valueOf(MainActivity.GM_jiliang),String.valueOf(MainActivity.n_jishu),String.valueOf(MainActivity.n_jiliang),longitude,latitude,0,isAlert);
+        }
+        Log.i(TAG, "---------save-------------------is "+isAlert);
+        /*switch (data[24]){
             case 0:
                 n_valViewMsg.setText("正常");
                 progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_normal));
@@ -894,19 +975,19 @@ public class MonitorFragment extends Fragment{
             case 1:
                 n_valViewMsg.setText("轻微报警");
                 progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                DataHelperUtils.saveLogMsg("报警","警告时间");
+                DataHelperUtils.saveLogMsg("报警","轻微报警");
                 break;
             case 2:
                 n_valViewMsg.setText("中度报警");
                 progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                DataHelperUtils.saveLogMsg("报警","警告时间");
+                DataHelperUtils.saveLogMsg("报警","中度报警");
                 break;
             case 3:
                 n_valViewMsg.setText("严重报警");
                 progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                DataHelperUtils.saveLogMsg("报警","警告时间");
+                DataHelperUtils.saveLogMsg("报警","严重报警");
                 break;
-        }
+        }*/
         if(MainActivity.valType==1){
             switch (data[23]){
                 case 0:
@@ -916,17 +997,17 @@ public class MonitorFragment extends Fragment{
                 case 1:
                     r_valViewMsg.setText("轻微报警");
                     progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    DataHelperUtils.saveLogMsg("报警","轻微报警");
                     break;
                 case 2:
                     r_valViewMsg.setText("中度报警");
                     progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    DataHelperUtils.saveLogMsg("报警","中度报警");
                     break;
                 case 3:
                     r_valViewMsg.setText("严重报警");
                     progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    DataHelperUtils.saveLogMsg("报警","严重报警");
                     break;
             }
             int r_val=BluetoothProtocol.getVal(data,2,3);
@@ -981,8 +1062,6 @@ public class MonitorFragment extends Fragment{
             if(isAlert){
                 DataHelperUtils.updateDataTotalMsgIsAlarm();
             }
-            MainActivity.nowValue=r_val;
-            DataHelperUtils.saveDataMsg(String.valueOf(r_val),longitude,latitude,0,isAlert);
         }
         else if(MainActivity.valType==2){
             switch (data[25]){
@@ -993,17 +1072,17 @@ public class MonitorFragment extends Fragment{
                 case 1:
                     r_valViewMsg.setText("轻微报警");
                     progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    DataHelperUtils.saveLogMsg("报警","轻微报警");
                     break;
                 case 2:
                     r_valViewMsg.setText("中度报警");
                     progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    DataHelperUtils.saveLogMsg("报警","中度报警");
                     break;
                 case 3:
                     r_valViewMsg.setText("严重报警");
                     progressBar_r.setProgressDrawable(getResources().getDrawable(R.drawable.layer_progress_alert));
-                    DataHelperUtils.saveLogMsg("报警","警告时间");
+                    DataHelperUtils.saveLogMsg("报警","严重报警");
                     break;
             }
             int r_val=BluetoothProtocol.getVal(data,4,7);
@@ -1070,8 +1149,6 @@ public class MonitorFragment extends Fragment{
             if(isAlert){
                 DataHelperUtils.updateDataTotalMsgIsAlarm();
             }
-            MainActivity.nowValue=r_val;
-            DataHelperUtils.saveDataMsg(String.valueOf(r_val),longitude,latitude,0,isAlert);
         }
     }
 
@@ -1181,7 +1258,8 @@ public class MonitorFragment extends Fragment{
         BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_end);
         MarkerOptions option = new MarkerOptions().position(point).icon(bitmap).draggable(true).extraInfo(mBundle).flat(true).alpha(0.5f);
         mBaiduMap.addOverlay(option);
-        DataHelperUtils.saveDataMsg(measureVal_r,longitude,latitude,1,isAlert);
+        //今晚就改的内容
+        //DataHelperUtils.saveDataMsg(measureVal_r,longitude,latitude,1,isAlert);
         /*DataMsg msg=new DataMsg(getTime(),measureVal,longitude,latitude,1);
         msg.save();*/
     }
@@ -1197,7 +1275,7 @@ public class MonitorFragment extends Fragment{
         }
         for(DataMsg data:list){
             Bundle mBundle = new Bundle();
-            mBundle.putString("msg", data.getValue());
+            mBundle.putString("msg", data.getN_jishu());
             LatLng point = new LatLng(data.getLatitude(), data.getLongitude());
             BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_end);
             MarkerOptions option = new MarkerOptions().position(point).icon(bitmap).draggable(true).extraInfo(mBundle).flat(true).alpha(0.5f);
@@ -1211,8 +1289,8 @@ public class MonitorFragment extends Fragment{
      * @create: 2019/09/29
      **/
     public void setTestMsg(){
-        DataMsg msg=new DataMsg(getTime(),String.valueOf(1111),116.364534,39.970186,1,"否",DataHelperUtils.dataTotalMsg_Id_Now);
-        msg.save();
+        DataMsg msg=new DataMsg(getTime(),String.valueOf(1111),"0","0","0","0","0",116.364534,39.970186,1,"否",DataHelperUtils.dataTotalMsg_Id_Now);
+        //msg.save();
     }
 
     /**
@@ -1233,12 +1311,205 @@ public class MonitorFragment extends Fragment{
 
 
     /**************************************导航算法部分*************************************/
+    /**
+     * @description: 导航算法开启中
+     * @author: lyj
+     * @create: 2019/12/20
+     **/
+    public void startDirection(){
+        MainActivity.isNaviStart=true;
+        MainActivity.isNaviEnd=false;
+        MainActivity.startLatitude=MainActivity.latitude;
+        MainActivity.startLongitude=MainActivity.longitude;
+        MainActivity.startNaIJiShu=MainActivity.Nai_jishu;
+        MainActivity.incrByValue=0;
+        MainActivity.incrByLatitude=0;
+        MainActivity.incrByLongitude=0;
+        if(directionLine!=null){
+            directionLine.remove();
+        }
+        if(directionCircle!=null){
+            directionCircle.remove();
+        }
+        //圆心位置
+        LatLng center = new LatLng(MainActivity.startLatitude, MainActivity.startLongitude);
+
+        //构造CircleOptions对象
+        CircleOptions mCircleOptions = new CircleOptions().center(center)
+                .radius(30)
+                .fillColor(0xAA0000FF) //填充颜色
+                .stroke(new Stroke(1, 0xAA00ff00)); //边框宽和边框颜色
+
+        // 在地图上显示圆
+        directionCircle = mBaiduMap.addOverlay(mCircleOptions);
+    }
+
+    /**
+     * @description: 导航算法进行中
+     * @author: lyj
+     * @create: 2019/12/20
+     **/
+    public void findDirection(){
+        if(MainActivity.Nai_jishu>MainActivity.startNaIJiShu){
+            LatLng start=new LatLng(MainActivity.startLatitude,MainActivity.startLongitude);
+            double distance=DistanceUtil.getDistance(new LatLng(MainActivity.latitude,MainActivity.longitude),start);
+            if(distance==0){
+                return;
+            }
+            double incr=(MainActivity.Nai_jishu-MainActivity.startNaIJiShu)/distance;
+            if(incr>MainActivity.incrByValue){
+                MainActivity.incrByValue=incr;
+                MainActivity.incrByLatitude=MainActivity.latitude-MainActivity.startLatitude;
+                MainActivity.incrByLongitude=MainActivity.longitude-MainActivity.startLongitude;
+            }
+        }
+    }
+
+    /**
+     * @description: 导航算法完成
+     * @author: lyj
+     * @create: 2019/12/20
+     **/
+    public void endDirection(){
+        MainActivity.isNaviStart=false;
+        MainActivity.isNaviEnd=true;
+        if(directionCircle!=null){
+            directionCircle.remove();
+        }
+    }
+
+    /**
+     * @description: 导航中
+     * @author: lyj
+     * @create: 2019/12/20
+     **/
+    public void alongWithDirection(){
+        if(directionLine!=null){
+            directionLine.remove();
+        }
+        LatLng start=new LatLng(MainActivity.latitude,MainActivity.longitude);
+        LatLng aim=new LatLng(MainActivity.latitude+MainActivity.incrByLatitude,MainActivity.longitude+MainActivity.incrByLongitude);
+        List<LatLng> list = new ArrayList<>();
+        list.add(start);
+        list.add(aim);
+        PolylineOptions polyline = new PolylineOptions().width(10).color(Color.BLACK).points(list);
+        directionLine=mBaiduMap.addOverlay(polyline);
+    }
+
+    /**
+     * @description: 预测算法是否可以开始
+     * @author: lyj
+     * @create: 2019/12/20
+     **/
+    public void canStartPrediction(){
+        //判断
+        if(MainActivity.Nai_jishu>MainActivity.maxValue){
+            MainActivity.isEnterRegion=true;
+        }
+        //测试阶段使用，记得关闭
+        MainActivity.isEnterRegion=true;
+    }
+
+
+    /**
+     * @description: 预测算法开启
+     * @author: lyj
+     * @create: 2019/12/20
+     **/
+    public void startPrediction(){
+        MainActivity.isNaviEnd=false;
+
+        MainActivity.isPredictStart=true;
+        MainActivity.isPredictEnd=false;
+
+        if(directionLine!=null){
+            directionLine.remove();
+        }
+        if(directionCircle!=null){
+            directionCircle.remove();
+        }
+        if(regionCircle!=null){
+            regionCircle.remove();
+        }
+        //圆心位置
+        LatLng center = new LatLng(MainActivity.latitude, MainActivity.longitude);
+
+        //构造CircleOptions对象
+        CircleOptions mCircleOptions = new CircleOptions().center(center)
+                .radius(30)
+                .fillColor(0xAA0000FF) //填充颜色
+                .stroke(new Stroke(1, 0xAA00ff00)); //边框宽和边框颜色
+
+        // 在地图上显示圆
+        regionCircle = mBaiduMap.addOverlay(mCircleOptions);
+    }
+
+    /**
+     * @description: 预测算法结束
+     * @author: lyj
+     * @create: 2019/12/20
+     **/
+    public void endPrediction(){
+        MainActivity.isPredictStart=false;
+        MainActivity.isPredictEnd=true;
+        if(regionCircle!=null){
+            regionCircle.remove();
+        }
+        //预测部分
+        ArrayList<ArrayList<Double>> data=DataHelperUtils.findDataByNowDateAsList();
+        /*Log.i(TAG, "------------------------list size is : " + data.size());
+        for(int i=0;i<data.size();i++){
+            Log.i(TAG, "------------------------list is : " + data.get(i).get(0)+" "+data.get(i).get(1)+" "+data.get(i).get(2));
+        }*/
+        double[] ans=DBScanUtils.DBSCAN(data);
+        if(ans[0]==0.0){
+            Toast.makeText(getActivity().getApplicationContext(), "数据采集不足，无法预测", Toast.LENGTH_LONG).show();
+        }
+        else{
+            theWayToPredictionPoint(ans);
+        }
+        //Toast.makeText(getActivity().getApplicationContext(), "size is"+data.size(), Toast.LENGTH_LONG).show();
+    }
+
+    /**
+     * @description: 预测算法是否可以结束
+     * @author: lyj
+     * @create: 2019/12/20
+     **/
+    public boolean canEndPrediction(){
+        if(DataHelperUtils.findDataByNowDateAsList().size()<MainActivity.predictSize){
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @description: 预测点导航
+     * @author: lyj
+     * @create: 2019/12/25
+     **/
+    public void theWayToPredictionPoint(double[] data){
+        Intent intent = new Intent(getActivity(), BNaviMainActivity.class);
+        Log.i(TAG, "------------------------end_longitude is : " + String.valueOf(data[0]));
+        Log.i(TAG, "------------------------end_latitude is : " + String.valueOf(data[1]));
+        intent.putExtra("end_longitude",String.valueOf(data[0]));
+        intent.putExtra("end_latitude",String.valueOf(data[1]));
+        intent.putExtra("start_longitude", MainActivity.longitude);
+        intent.putExtra("start_latitude", MainActivity.latitude);
+        startActivity(intent);
+    }
+
+
+
+
+
+
 
     /**
      * @description: 绘制初始点
      * @author: lyj
      * @create: 2019/09/10
-     **/
+     **//*
     public void pointStart() {
         mBaiduMap.clear();
         //创建测试的起点坐标
@@ -1254,13 +1525,13 @@ public class MonitorFragment extends Fragment{
         mBaiduMap.addOverlay(option);
     }
 
-    /**
+    *//**
      * @description: 开启引路算法
      * @author: lyj
      * @create: 2019/09/10
-     **/
+     **//*
     public void findStart() {
-        /*if(MainActivity.testFlag){
+        *//*if(MainActivity.testFlag){
             startValue=test.findData();
             test.find();
             if(startValue!=0){
@@ -1270,7 +1541,7 @@ public class MonitorFragment extends Fragment{
                 flag=1;
                 pointStart();
             }
-        }*/
+        }*//*
         if(MainActivity.openNavi){
             startValue=MainActivity.nowValue;
             if(startValue!=0){
@@ -1283,11 +1554,11 @@ public class MonitorFragment extends Fragment{
         }
     }
 
-    /**
+    *//**
      * @description: 引路算法
      * @author: lyj
      * @create: 2019/09/06
-     **/
+     **//*
     private void findDirection(){
         LatLng start=new LatLng(MainActivity.startLatitude,MainActivity.startLongitude);
         if(flag==1){
@@ -1305,8 +1576,8 @@ public class MonitorFragment extends Fragment{
                 return;
             }
             Toast.makeText(getActivity().getApplicationContext(), "请沿着黑色指引路线到达指定地点", Toast.LENGTH_LONG).show();
-            /*double distance1=DistanceUtil.getDistance(new LatLng(MainActivity.Latitude,MainActivity.Longitude),aim);
-            Toast.makeText(getActivity().getApplicationContext(), "距离:"+distance1, Toast.LENGTH_LONG).show();*/
+            *//*double distance1=DistanceUtil.getDistance(new LatLng(MainActivity.Latitude,MainActivity.Longitude),aim);
+            Toast.makeText(getActivity().getApplicationContext(), "距离:"+distance1, Toast.LENGTH_LONG).show();*//*
             if(DistanceUtil.getDistance(new LatLng(MainActivity.latitude,MainActivity.longitude),aim)<3.5){
                 calculateDir();//计算辐射比率
                 flag=2;//切换模式
@@ -1333,11 +1604,11 @@ public class MonitorFragment extends Fragment{
         }
     }
 
-    /**
+    *//**
      * @description: 目前最大辐射比率方向计算
      * @author: lyj
      * @create: 2019/09/10
-     **/
+     **//*
     public void calculateDir() {
         Log.i(TAG, "calculate Dirnb ，flag==1");
         //int nextValue=test.findData();
@@ -1350,11 +1621,11 @@ public class MonitorFragment extends Fragment{
         }
     }
 
-    /**
+    *//**
      * @description: 引导沿着辐射比率最大方向
      * @author: lyj
      * @create: 2019/09/10
-     **/
+     **//*
     public void alongWithDirection() {
         if(!setGuide){
             LatLng now=new LatLng(MainActivity.latitude,MainActivity.longitude);
@@ -1385,11 +1656,11 @@ public class MonitorFragment extends Fragment{
         startValue=nowValue;
     }
 
-    /**
+    *//**
      * @description: 绘制区域
      * @author: lyj
      * @create: 2019/09/18
-     **/
+     **//*
     public void createRegion(double[] now,int dir) {
         mBaiduMap.clear();
         //setRegion=!setRegion;
@@ -1411,6 +1682,6 @@ public class MonitorFragment extends Fragment{
             Overlay track = mBaiduMap.addOverlay(polyline);
         }
         Toast.makeText(getActivity().getApplicationContext(), "请沿着黑色路线依次采集数据", Toast.LENGTH_LONG).show();
-    }
+    }*/
 }
 

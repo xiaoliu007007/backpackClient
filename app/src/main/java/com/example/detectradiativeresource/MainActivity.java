@@ -34,6 +34,8 @@ import com.example.detectradiativeresource.bluetooth.BluetoothFragment;
 import com.example.detectradiativeresource.bluetooth.library.BluetoothLeService;
 import com.example.detectradiativeresource.bluetooth.library.BluetoothState;
 import com.example.detectradiativeresource.bluetooth.library.DeviceScanActivity;
+import com.example.detectradiativeresource.dao.DataMsg;
+import com.example.detectradiativeresource.dao.DataTotalMsg;
 import com.example.detectradiativeresource.data.DataFragment;
 import com.example.detectradiativeresource.dao.TestMsg;
 import com.example.detectradiativeresource.data.DataTotalFragment;
@@ -65,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
      */
     public static final String TAG="MainActivity";
     private RadioGroup mNavGroup;
-    private TextView bluetoothMsg;
+    //private TextView bluetoothMsg;
     private FragmentTransaction mTransaction;
     private View view;
     public static LocationService locationService;
@@ -80,6 +82,12 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static int alert_n_jishu;
     public static int total_n_jiliang;
     public static int alert_n_jiliang;
+    public static int Nai_jishu;
+    public static int Nai_jiliang;
+    public static int GM_jishu;
+    public static int GM_jiliang;
+    public static int n_jishu;
+    public static int n_jiliang;
     public static int valType=1;//1表示计数率，2表示计量率
     public static boolean isAlertOpen = true; //是否是打开报警状态
     public static int closeAlertTime=30;
@@ -88,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static TimerTask task = null;
     public static Timer connectTimer = null;
     public static TimerTask connectTask = null;
-    private static String connectedAddress=null; //默认地址
+    public static String connectedAddress=null; //默认地址
     public static String connectedStateMsg="蓝牙未连接";//蓝牙连接信息
     private static RadioButton bluetoothBtn;//蓝牙按钮
     public static int spectrumTimeInterval=20;//能谱采集时间间隔
@@ -96,8 +104,6 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static boolean isNoAlert=false;//中途是否出现正常数值
 
     public static double interval;//范围内历史轨迹点的间隔数
-    public static double startLatitude;
-    public static double startLongitude;
     public static boolean testFlag=false;//是否开启测试
     public static boolean openNavi=false;//是否开启智能导航
     public static double[][] directions={{0,0.0001},{0.00005,0.00005},{0.0001,0},{0.00005,-0.00005},{0,-0.0001},{-0.00005,-0.00005},{-0.0001,0},{-0.00005,0.00005}};
@@ -106,7 +112,8 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static double rightLongitude=0.0;
     public static double rightLatitude=0.0;
     public static int rightDir=-1;
-    public static int nowValue;//当前点辐射值数据
+    /*public static int NaI_jishu_value;//当前点辐射值数据
+    public static int NaI_jiliang_value;*/
 
     public static int connectedState=0; //和背包连接状态，1表示处于握手状态，2表示处于复位状态，3表示在测量数据,4表示停止，0表示无状态
     /**
@@ -125,6 +132,8 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
 
 
     public static BluetoothLeService mBluetoothLeService;
+    public static boolean secondConnect=false;//是否再次重连
+    public static boolean connectFlag=false;//蓝牙连接状态
     ArrayList<Integer> receivedList=new ArrayList<>();//接受数据的list
     public static boolean autoFlag=false;//是否自动重连
     private String address;
@@ -149,6 +158,22 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     public static int collectBGVal;//强制本底采集内容
     public OnDataListener onDataListener;
     private static final int REQUEST_ENABLE_BT = 1;
+
+    /**************************************导航算法部分*************************************/
+    public static boolean isNaviStart=false;//是否是导航开始状态
+    public static boolean isNaviEnd=false;//是否是导航中状态
+    public static double startLatitude;
+    public static double startLongitude;
+    public static int startNaIJiShu;
+    public static double incrByValue;
+    public static double incrByLongitude;
+    public static double incrByLatitude;
+
+    public static boolean isEnterRegion=false;
+    public static boolean isPredictStart=false;
+    public static boolean isPredictEnd=false;
+    public static int predictSize=10;//采集预测数据数量
+
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) {
@@ -182,9 +207,11 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 Fragment currentFragment=getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
                 if( currentFragment!=null&&currentFragment instanceof BluetoothFragment){
                     BluetoothListener myListener=(BluetoothListener)bluetoothFragment;
-                    myListener.setText(connectedStateMsg);
+                    //myListener.setText(connectedStateMsg);
+                    myListener.change();
                 }
                 bluetoothBtn.setText("蓝牙已连接");
+                connectFlag=true;
                 //startConnectTimer();
                 startTimer(1);
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
@@ -195,13 +222,22 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     , Toast.LENGTH_SHORT).show();
                 MainActivity.receivedState=BluetoothProtocol.NO_STATE;
                 connectedStateMsg="蓝牙未连接";
+                connectFlag=false;
                 Fragment currentFragment=getSupportFragmentManager().findFragmentById(R.id.id_fragment_content);
                 if( currentFragment!=null&&currentFragment instanceof BluetoothFragment){
                     BluetoothListener myListener=(BluetoothListener)bluetoothFragment;
-                    myListener.setText(connectedStateMsg);
+                    myListener.change();
+                    //myListener.setText(connectedStateMsg);
                 }
                 bluetoothBtn.setText("蓝牙未连接");
                 receivedState=BluetoothProtocol.NO_STATE;
+                /*if(secondConnect){
+                    secondConnect=false;
+                    mBluetoothLeService.connect(connectedAddress);
+                }
+                else{
+                    connectedAddress=null;
+                }*/
                 //stopConnectTimer();
                 stopTimer();
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
@@ -211,6 +247,9 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
             }else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 //displayData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA));
                 byte[] data=intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+                /*for(byte n:data){
+                    Log.i("log","------------data is "+n);
+                }*/
                 byte[] aim_shake_hands_ok={0x68,0x32,0x0D,0x0A};
                 if(Arrays.equals(aim_shake_hands_ok,data)){
                     receivedState=BluetoothProtocol.SHAKE_HANDS_OK;
@@ -222,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 if(isFirstRead&&settingGetDataPart1State==BluetoothProtocol.SETTING_GET_DATA_PART1&&data.length==6){
                     settingGetDataPart1State=BluetoothProtocol.SETTING_GET_DATA_PART1_OK;
                     spectrumTimeInterval=data[1];
+                    isFirstRead=false;
                     return;
 
                 }
@@ -416,7 +456,7 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     private void initView() {
         LayoutInflater inflater=(LayoutInflater)getSystemService(LAYOUT_INFLATER_SERVICE);
         view=inflater.inflate(R.layout.fragment_bluetooth, null);
-        bluetoothMsg=view.findViewById(R.id.id_bluetooth_msg);
+        //bluetoothMsg=view.findViewById(R.id.id_bluetooth_msg);
 
         mNavGroup = (RadioGroup)findViewById(R.id.id_navcontent);
         monitorFragemnt = MonitorFragment.getNewInstance();
@@ -448,7 +488,14 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 temp_position_index = VIEW_MONITOR_INDEX;
                 break;
             case R.id.id_nav_bt_bluetooth:
-                if (mBluetoothLeService!=null&&mBluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTED) {
+                /*if (mBluetoothLeService!=null&&mBluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTED) {
+                    showbluetoothDialog();
+                } else {
+                    //显示
+                    Intent intent = new Intent(getApplicationContext(), DeviceScanActivity.class);
+                    startActivityForResult(intent,BluetoothState.REQUEST_CONNECT_DEVICE);
+                }*/
+                /*if (mBluetoothLeService!=null&&mBluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTED) {
                     showbluetoothDialog();
                 } else {
                     //显示
@@ -459,6 +506,15 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 mFlLifeRoot.removeAllViews();
                 mTransaction.replace(R.id.id_fragment_content, bluetoothFragment);
                 mTransaction.commit();
+                temp_position_index = VIEW_BLUETOOTH_INDEX;
+                setAutoFlagToTrue();*/
+                if (temp_position_index != VIEW_BLUETOOTH_INDEX) {
+                    //显示
+                    mTransaction = getSupportFragmentManager().beginTransaction();
+                    mFlLifeRoot.removeAllViews();
+                    mTransaction.replace(R.id.id_fragment_content, bluetoothFragment);
+                    mTransaction.commit();
+                }
                 temp_position_index = VIEW_BLUETOOTH_INDEX;
                 setAutoFlagToTrue();
                 break;
@@ -639,7 +695,8 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
     }
 
     public interface BluetoothListener{
-        public void setText(String code);
+        //public void setText(String code);
+        public void change();
     }
 
     public interface SpectrumListener{
@@ -663,6 +720,9 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
      * @create: 2019/11/26
      **/
     public static void send(String type,byte[] data){
+        if(mBluetoothLeService==null){
+            return;
+        }
         switch (type){
             case BluetoothProtocol.SHAKE_HANDS:
                 byte[] send_shake_hands={0x68,0x30,0x0D,0x0A};
@@ -1205,7 +1265,20 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                     byte[] data1={0x02};
                     MainActivity.send(BluetoothProtocol.ALERT_CLOSE,data1);
                     break;
-
+                case 5:
+                    unbindService(mServiceConnection);
+                    unregisterReceiver(mGattUpdateReceiver);
+                    mBluetoothLeService = null;
+                    if(mBluetoothLeService==null){
+                        Log.e(TAG, "-----------------null--------------");
+                    }
+                    else{
+                        Log.e(TAG, "-----------------not null--------------");
+                    }
+                    break;
+                case 6:
+                    connect();
+                    break;
             }
             super.handleMessage(msg);
         }
@@ -1353,6 +1426,32 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
                 Log.i(TAG, "-------------------case4------------");
                 connectTimer.schedule(connectTask, 100,1000);
                 break;
+            case 5:
+                connectTask = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 5;
+                        handler.sendMessage(message);
+                    }
+                };
+                Log.i(TAG, "-------------------case5-----------");
+                connectTimer.schedule(connectTask, 100);
+                break;
+            case 6:
+                connectTask = new TimerTask() {
+                    @Override
+                    public void run() {
+                        // 需要做的事:发送消息
+                        Message message = new Message();
+                        message.what = 6;
+                        handler.sendMessage(message);
+                    }
+                };
+                Log.i(TAG, "-------------------case6-----------");
+                connectTimer.schedule(connectTask, 500);
+                break;
 
         }
     }
@@ -1381,4 +1480,56 @@ public class MainActivity extends AppCompatActivity implements DataTotalFragment
         }
     }
 
+    public void changeBluetooth(String address){
+        disconnect();
+        connectedAddress=address;
+        startTimer(6);
+        Log.e(TAG, "-----------------click 2--------------");
+        /*if(connectFlag){
+            //Log.e(TAG, "-----------------connect 1--------------");
+            mBluetoothLeService.disconnect();
+            secondConnect=true;
+            connectedAddress=address;
+        }
+        else{
+            //Log.e(TAG, "-----------------connect 2--------------");
+            mBluetoothLeService.disconnect();
+            connectedAddress=address;
+            mBluetoothLeService.connect(address);
+        }*/
+        //Log.e(TAG, "-----------------address is--------------"+address);
+    }
+
+    public void disconnect(){
+        /*if(mBluetoothLeService==null){
+            Log.e(TAG, "-----------------really null--------------");
+        }*/
+        if(mBluetoothLeService!=null){
+            mBluetoothLeService.disconnect();
+            startTimer(5);
+        }
+        /*if(connectFlag){
+            mBluetoothLeService.disconnect();
+        }
+        else{
+
+        }*/
+    }
+    public void connect(){
+        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+    }
+    public void testSave(){
+        DataTotalMsg msg=new DataTotalMsg();
+        msg.setStartTime("2019-12-22 01:24:05");
+        msg.setIsAlarm("否");
+        msg.save();
+
+        DataTotalMsg msg1=new DataTotalMsg();
+        msg1.setStartTime("2019-12-23 01:24:05");
+        msg1.setIsAlarm("否");
+        msg1.save();
+
+    }
 }
