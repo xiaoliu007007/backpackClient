@@ -66,6 +66,7 @@ public class DataHelperUtils {
      * @create: 2019/11/13
      **/
     public static void updateDataTotalMsgTime(){
+        dataTotalMsg_Id_Now = DataTotalMsg.find(DataTotalMsg.class,"").size();
         DataTotalMsg msg=DataTotalMsg.findById(DataTotalMsg.class,dataTotalMsg_Id_Now);
         if(msg!=null){
             msg.setEndTime(getTime());
@@ -80,6 +81,7 @@ public class DataHelperUtils {
      **/
     public static void updateDataTotalMsgIsAlarm(){
         if(!dataTotalMsg_IsAlarm_Now){
+            dataTotalMsg_Id_Now = DataTotalMsg.find(DataTotalMsg.class,"").size();
             DataTotalMsg msg=DataTotalMsg.findById(DataTotalMsg.class,dataTotalMsg_Id_Now);
             msg.setIsAlarm("是");
             msg.save();
@@ -105,6 +107,7 @@ public class DataHelperUtils {
     public static void saveDataMsg(String Nai_jishu,String Nai_jiliang,String GM_jishu,String GM_jiliang,String n_jishu,String n_jiliang,double longitude,double latitude,int status,boolean flag){
         if(longitude!=0.0&&latitude!=0.0){
             String isAlarm=flag?"是":"否";
+            dataTotalMsg_Id_Now = DataTotalMsg.find(DataTotalMsg.class,"").size();
             DataMsg msg=new DataMsg(getTime(),Nai_jishu,Nai_jiliang,GM_jishu,GM_jiliang,n_jishu,n_jiliang,longitude,latitude,status,isAlarm,dataTotalMsg_Id_Now);
             Log.i("------save id is-----",String.valueOf(dataTotalMsg_Id_Now));
             msg.save();

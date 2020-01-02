@@ -54,6 +54,7 @@ import com.example.detectradiativeresource.route.BNaviMainActivity;
 import com.example.detectradiativeresource.utils.BluetoothProtocol;
 import com.example.detectradiativeresource.utils.DBScanUtils;
 import com.example.detectradiativeresource.utils.DataHelperUtils;
+import com.example.detectradiativeresource.utils.FileUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -353,6 +354,7 @@ public class MonitorFragment extends Fragment{
                         else{
                             startMeasure();
                         }*/
+                        //Toast.makeText(getActivity().getApplicationContext(), "开始1", Toast.LENGTH_LONG).show();
                         startMeasure();
                     }else{
                         //stopTimer();
@@ -689,6 +691,7 @@ public class MonitorFragment extends Fragment{
         }
         mainActivity.stopTimer();
         mainActivity.startTimer(3);
+        //Toast.makeText(getActivity().getApplicationContext(), "开始2", Toast.LENGTH_LONG).show();
     }
 
     /**
@@ -1060,7 +1063,7 @@ public class MonitorFragment extends Fragment{
             progressBar_r.setProgress((int) ((r_val+0.1)/MainActivity.total_r_jishu*80+20));
             progressBar_n.setProgress((int) ((n_val+0.1)/MainActivity.total_n_jishu*80+20));
             if(isAlert){
-                DataHelperUtils.updateDataTotalMsgIsAlarm();
+                //DataHelperUtils.updateDataTotalMsgIsAlarm();
             }
         }
         else if(MainActivity.valType==2){
@@ -1147,7 +1150,7 @@ public class MonitorFragment extends Fragment{
             progressBar_r.setProgress((int) ((r_val+0.1)/MainActivity.total_r_jiliang*80+20));
             progressBar_n.setProgress((int) ((n_val+0.1)/MainActivity.total_n_jiliang*80+20));
             if(isAlert){
-                DataHelperUtils.updateDataTotalMsgIsAlarm();
+                //DataHelperUtils.updateDataTotalMsgIsAlarm();
             }
         }
     }
@@ -1359,8 +1362,8 @@ public class MonitorFragment extends Fragment{
             double incr=(MainActivity.Nai_jishu-MainActivity.startNaIJiShu)/distance;
             if(incr>MainActivity.incrByValue){
                 MainActivity.incrByValue=incr;
-                MainActivity.incrByLatitude=MainActivity.latitude-MainActivity.startLatitude;
-                MainActivity.incrByLongitude=MainActivity.longitude-MainActivity.startLongitude;
+                MainActivity.incrByLatitude=(MainActivity.latitude-MainActivity.startLatitude)*10;
+                MainActivity.incrByLongitude=(MainActivity.longitude-MainActivity.startLongitude)*10;
             }
         }
     }
@@ -1392,7 +1395,7 @@ public class MonitorFragment extends Fragment{
         List<LatLng> list = new ArrayList<>();
         list.add(start);
         list.add(aim);
-        PolylineOptions polyline = new PolylineOptions().width(10).color(Color.BLACK).points(list);
+        PolylineOptions polyline = new PolylineOptions().width(10).color(Color.RED).points(list);
         directionLine=mBaiduMap.addOverlay(polyline);
     }
 
@@ -1407,7 +1410,7 @@ public class MonitorFragment extends Fragment{
             MainActivity.isEnterRegion=true;
         }
         //测试阶段使用，记得关闭
-        MainActivity.isEnterRegion=true;
+        //MainActivity.isEnterRegion=true;
     }
 
 
@@ -1466,6 +1469,15 @@ public class MonitorFragment extends Fragment{
             Toast.makeText(getActivity().getApplicationContext(), "数据采集不足，无法预测", Toast.LENGTH_LONG).show();
         }
         else{
+            StringBuilder sb=new StringBuilder();
+            for(ArrayList<Double>data1:data){
+                for(double data2:data1){
+                    sb.append(data2);
+                    sb.append(" ");
+                }
+                sb.append("# ");
+            }
+            FileUtils.writeTxtToFile(sb.toString(), "/sdcard/Predict/", FileUtils.getFileName());
             theWayToPredictionPoint(ans);
         }
         //Toast.makeText(getActivity().getApplicationContext(), "size is"+data.size(), Toast.LENGTH_LONG).show();
