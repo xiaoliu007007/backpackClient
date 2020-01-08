@@ -241,6 +241,7 @@ public class MonitorFragment extends Fragment{
                     //获取经纬度
                     latitude = location.getLatitude();
                     longitude = location.getLongitude();
+
                     MainActivity.latitude=latitude;
                     MainActivity.longitude=longitude;
                     //Log.i(TAG, "onReceiveLocation: "+"纬度："+Double.toString(latitude)+"；经度：" + Double.toString(longitude) + "；精准度"+ location.getRadius());
@@ -383,7 +384,11 @@ public class MonitorFragment extends Fragment{
         btn_navi.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(MainActivity.isPredictStart||MainActivity.isEnterRegion){
+                /*if(MainActivity.isPredictStart||MainActivity.isEnterRegion){
+                    Toast.makeText(getActivity().getApplicationContext(), "预测中或者已经到达预测点位置，导航不可用", Toast.LENGTH_LONG).show();
+                    return;
+                }*/
+                if(MainActivity.isPredictStart){
                     Toast.makeText(getActivity().getApplicationContext(), "预测中或者已经到达预测点位置，导航不可用", Toast.LENGTH_LONG).show();
                     return;
                 }
@@ -1464,21 +1469,28 @@ public class MonitorFragment extends Fragment{
         for(int i=0;i<data.size();i++){
             Log.i(TAG, "------------------------list is : " + data.get(i).get(0)+" "+data.get(i).get(1)+" "+data.get(i).get(2));
         }*/
+        StringBuilder sb=new StringBuilder();
+        for(ArrayList<Double>data1:data){
+            Log.e("help", "------------------------------data is"+data1.get(0)+" "+data1.get(1)+" "+data1.get(2));
+            for(double data2:data1){
+                sb.append(data2);
+                sb.append(" ");
+            }
+            sb.append("# ");
+        }
+        FileUtils.writeTxtToFile(sb.toString(), "/sdcard/Predict/", FileUtils.getFileName());
+
         double[] ans=DBScanUtils.DBSCAN(data);
         if(ans[0]==0.0){
             Toast.makeText(getActivity().getApplicationContext(), "数据采集不足，无法预测", Toast.LENGTH_LONG).show();
         }
         else{
-            StringBuilder sb=new StringBuilder();
-            for(ArrayList<Double>data1:data){
-                for(double data2:data1){
-                    sb.append(data2);
-                    sb.append(" ");
-                }
-                sb.append("# ");
-            }
-            FileUtils.writeTxtToFile(sb.toString(), "/sdcard/Predict/", FileUtils.getFileName());
-            theWayToPredictionPoint(ans);
+            //theWayToPredictionPoint(ans);
+            LatLng point = new LatLng(ans[0], ans[1]);
+            BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_end);
+            MarkerOptions option = new MarkerOptions().position(point).icon(bitmap).draggable(true).flat(true).alpha(0.5f);
+            mBaiduMap.addOverlay(option);
+            Toast.makeText(getActivity().getApplicationContext(), "预测坐标点为： "+ans[0]+" : "+ans[1], Toast.LENGTH_LONG).show();
         }
         //Toast.makeText(getActivity().getApplicationContext(), "size is"+data.size(), Toast.LENGTH_LONG).show();
     }

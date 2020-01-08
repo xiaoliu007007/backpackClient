@@ -58,6 +58,10 @@ public class SettingFragment extends Fragment{
     private EditText alert_threshold_val_2;
     private int thresholdAlert_3;
     private EditText alert_threshold_val_3;
+    private double aPow=10000;
+    private double bPow=10000;
+    private double cPow=10000;
+    private double dPow=10000;
 
     private Button setting_sys;
     private Button reading_sys;
@@ -236,13 +240,27 @@ public class SettingFragment extends Fragment{
                     thresholdLow=Integer.parseInt(threshold_low_val.getText().toString());
                 }
 
+                if(thresholdType==2){
+                    aPow=100000;
+                    bPow=10000000;
+                    cPow=10000;
+                    dPow=1000;
+                }
+                else{
+                    aPow=10000;
+                    bPow=10000;
+                    cPow=10000;
+                    dPow=10000;
+                }
+
+
 
                 if(NaI_a.getText().toString().equals("")){
                     NaIAVal=0;
                 }
                 else{
                     try{
-                        NaIAVal=(int)(Double.parseDouble(NaI_a.getText().toString())*10000);
+                        NaIAVal=(int)(Double.parseDouble(NaI_a.getText().toString())*aPow);
                     }
                     catch (Exception e){
                         Toast.makeText(getActivity().getApplicationContext(), "a参数设置不正确", Toast.LENGTH_LONG).show();
@@ -255,7 +273,7 @@ public class SettingFragment extends Fragment{
                 }
                 else{
                     try{
-                        NaIBVal=(int)(Double.parseDouble(NaI_b.getText().toString())*10000);
+                        NaIBVal=(int)(Double.parseDouble(NaI_b.getText().toString())*bPow);
                     }
                     catch (Exception e){
                         Toast.makeText(getActivity().getApplicationContext(), "b参数设置不正确", Toast.LENGTH_LONG).show();
@@ -268,7 +286,7 @@ public class SettingFragment extends Fragment{
                 }
                 else{
                     try{
-                        NaICVal=(int)(Double.parseDouble(NaI_c.getText().toString())*10000);
+                        NaICVal=(int)(Double.parseDouble(NaI_c.getText().toString())*cPow);
                     }
                     catch (Exception e){
                         Toast.makeText(getActivity().getApplicationContext(), "c参数设置不正确", Toast.LENGTH_LONG).show();
@@ -281,7 +299,7 @@ public class SettingFragment extends Fragment{
                 }
                 else{
                     try{
-                        NaIDVal=(int)(Double.parseDouble(NaI_d.getText().toString())*10000);
+                        NaIDVal=(int)(Double.parseDouble(NaI_d.getText().toString())*dPow);
                     }
                     catch (Exception e){
                         Toast.makeText(getActivity().getApplicationContext(), "d参数设置不正确", Toast.LENGTH_LONG).show();
@@ -581,15 +599,34 @@ public class SettingFragment extends Fragment{
         NaI_c.setText(df.format(NaICVal/n1));
         NaIDVal=BluetoothProtocol.getVal(data,14,15);
         NaI_d.setText(df.format(NaIDVal/n1));*/
-        double n1=10000;
-        NaIAVal=BluetoothProtocol.getVal(data,8,9);
-        NaI_a.setText(BluetoothProtocol.removeZero(NaIAVal,n1,4));
-        NaIBVal=BluetoothProtocol.getVal(data,10,11);
-        NaI_b.setText(BluetoothProtocol.removeZero(NaIBVal,n1,4));
-        NaICVal=BluetoothProtocol.getVal(data,12,13);
-        NaI_c.setText(BluetoothProtocol.removeZero(NaICVal,n1,4));
-        NaIDVal=BluetoothProtocol.getVal(data,14,15);
-        NaI_d.setText(BluetoothProtocol.removeZero(NaIDVal,n1,4));
+        if(thresholdType==2){
+            aPow=100000;
+            bPow=10000000;
+            cPow=10000;
+            dPow=1000;
+            NaIAVal=BluetoothProtocol.getVal(data,8,9);
+            NaI_a.setText(BluetoothProtocol.removeZero(NaIAVal,aPow,5));
+            NaIBVal=BluetoothProtocol.getVal(data,10,11);
+            NaI_b.setText(BluetoothProtocol.removeZero(NaIBVal,bPow,7));
+            NaICVal=BluetoothProtocol.getVal(data,12,13);
+            NaI_c.setText(BluetoothProtocol.removeZero(NaICVal,cPow,4));
+            NaIDVal=BluetoothProtocol.getVal(data,14,15);
+            NaI_d.setText(BluetoothProtocol.removeZero(NaIDVal,dPow,3));
+        }
+        else{
+            aPow=10000;
+            bPow=10000;
+            cPow=10000;
+            dPow=10000;
+            NaIAVal=BluetoothProtocol.getVal(data,8,9);
+            NaI_a.setText(BluetoothProtocol.removeZero(NaIAVal,aPow,4));
+            NaIBVal=BluetoothProtocol.getVal(data,10,11);
+            NaI_b.setText(BluetoothProtocol.removeZero(NaIBVal,bPow,4));
+            NaICVal=BluetoothProtocol.getVal(data,12,13);
+            NaI_c.setText(BluetoothProtocol.removeZero(NaICVal,cPow,4));
+            NaIDVal=BluetoothProtocol.getVal(data,14,15);
+            NaI_d.setText(BluetoothProtocol.removeZero(NaIDVal,dPow,4));
+        }
 
 
         thresholdAlert_1=BluetoothProtocol.getVal(data,16,17);

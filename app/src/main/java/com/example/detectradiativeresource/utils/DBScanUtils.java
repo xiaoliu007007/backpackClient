@@ -18,7 +18,7 @@ public class DBScanUtils {
     private static int minpts = 44;
     private static double radius = 0.00001;
     private static List<double[]> cores;
-    private static int interval = 250;
+    private static int interval = 800;
 
     /**
      * @description: 计算距离
@@ -130,8 +130,8 @@ public class DBScanUtils {
             }
         }
         cores = findCores(circle, minpts, radius);
-        //double[] ans = { 0.0, 0.0 };
-        double[] ans = { 116.364734, 39.968584 };
+        double[] ans = { 0.0, 0.0 };
+        //double[] ans = { 116.364734, 39.968584 };
         for (double[] core : cores) {
             ans[0] += core[0];
             ans[1] += core[1];

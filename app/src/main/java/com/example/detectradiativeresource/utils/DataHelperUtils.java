@@ -66,7 +66,14 @@ public class DataHelperUtils {
      * @create: 2019/11/13
      **/
     public static void updateDataTotalMsgTime(){
-        dataTotalMsg_Id_Now = DataTotalMsg.find(DataTotalMsg.class,"").size();
+        //dataTotalMsg_Id_Now = DataTotalMsg.find(DataTotalMsg.class,"").size();
+        List<DataTotalMsg> listHelp=DataTotalMsg.find(DataTotalMsg.class,"");
+        if(listHelp.size()==0){
+            dataTotalMsg_Id_Now=0;
+        }
+        else{
+            dataTotalMsg_Id_Now=listHelp.get(listHelp.size()-1).getId();
+        }
         DataTotalMsg msg=DataTotalMsg.findById(DataTotalMsg.class,dataTotalMsg_Id_Now);
         if(msg!=null){
             msg.setEndTime(getTime());
@@ -81,7 +88,14 @@ public class DataHelperUtils {
      **/
     public static void updateDataTotalMsgIsAlarm(){
         if(!dataTotalMsg_IsAlarm_Now){
-            dataTotalMsg_Id_Now = DataTotalMsg.find(DataTotalMsg.class,"").size();
+            //dataTotalMsg_Id_Now = DataTotalMsg.find(DataTotalMsg.class,"").size();
+            List<DataTotalMsg> listHelp=DataTotalMsg.find(DataTotalMsg.class,"");
+            if(listHelp.size()==0){
+                dataTotalMsg_Id_Now=0;
+            }
+            else{
+                dataTotalMsg_Id_Now=listHelp.get(listHelp.size()-1).getId();
+            }
             DataTotalMsg msg=DataTotalMsg.findById(DataTotalMsg.class,dataTotalMsg_Id_Now);
             msg.setIsAlarm("是");
             msg.save();
@@ -107,7 +121,13 @@ public class DataHelperUtils {
     public static void saveDataMsg(String Nai_jishu,String Nai_jiliang,String GM_jishu,String GM_jiliang,String n_jishu,String n_jiliang,double longitude,double latitude,int status,boolean flag){
         if(longitude!=0.0&&latitude!=0.0){
             String isAlarm=flag?"是":"否";
-            dataTotalMsg_Id_Now = DataTotalMsg.find(DataTotalMsg.class,"").size();
+            List<DataTotalMsg> listHelp=DataTotalMsg.find(DataTotalMsg.class,"");
+            if(listHelp.size()==0){
+                dataTotalMsg_Id_Now=0;
+            }
+            else{
+                dataTotalMsg_Id_Now=listHelp.get(listHelp.size()-1).getId();
+            }
             DataMsg msg=new DataMsg(getTime(),Nai_jishu,Nai_jiliang,GM_jishu,GM_jiliang,n_jishu,n_jiliang,longitude,latitude,status,isAlarm,dataTotalMsg_Id_Now);
             Log.i("------save id is-----",String.valueOf(dataTotalMsg_Id_Now));
             msg.save();
@@ -126,6 +146,12 @@ public class DataHelperUtils {
         List<DataMsg > list = DataMsg.find(DataMsg.class,"parent = ?",String.valueOf(id));
         for(DataMsg data:list){
             data.delete();
+        }
+
+        Log.e("help", "------------------------------delete id is"+id);
+        List<DataMsg > list1 = DataMsg.find(DataMsg.class,"");
+        for(DataMsg data:list1){
+            Log.e("help", "------------------------------parent id is"+data.getParent());
         }
     }
 
@@ -181,7 +207,7 @@ public class DataHelperUtils {
             if(isTodayDate(data.getTime())){
                 ArrayList<Double> list=new ArrayList<>();
                 list.add(data.getLongitude());
-                list.add(data.getLongitude());
+                list.add(data.getLatitude());
                 list.add(Double.parseDouble(data.getNaI_jishu()));
                 ans.add(list);
             }
@@ -321,6 +347,7 @@ public class DataHelperUtils {
         for(LogDetailMsg data:list){
             data.delete();
         }
+
     }
 
     /**
